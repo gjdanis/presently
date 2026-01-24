@@ -1,0 +1,290 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Presently Lambda Functions
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+  NeonDatabaseURL:
+    Type: String
+    Description: Neon Postgres connection string
+    NoEcho: true
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 512
+    Environment:
+      Variables:
+        DATABASE_URL: !Ref NeonDatabaseURL
+        PHOTOS_BUCKET: !Sub '{{resolve:ssm:/${Environment}/PhotosBucket}}'
+        PHOTOS_CDN: !Sub '{{resolve:ssm:/${Environment}/PhotosCDN}}'
+        COGNITO_USER_POOL_ID: !Sub '{{resolve:ssm:/${Environment}/UserPoolId}}'
+        COGNITO_CLIENT_ID: !Sub '{{resolve:ssm:/${Environment}/UserPoolClientId}}'
+        ENVIRONMENT: !Ref Environment
+
+Resources:
+  # ============================================================================
+  # API Gateway with Cognito Authorizer
+  # ============================================================================
+
+  PresentlyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub presently-api-${Environment}
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET, POST, PUT, DELETE, OPTIONS'"
+        AllowHeaders: "'Content-Type, Authorization'"
+        AllowOrigin: "'*'"  # TODO: Restrict to your domain in production
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub '{{resolve:ssm:/${Environment}/UserPoolArn}}'
+
+  # ============================================================================
+  # Profile Function
+  # ============================================================================
+
+  ProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.profile.handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Events:
+        GetProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /profile
+            Method: GET
+        UpdateProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /profile
+            Method: PUT
+
+  # ============================================================================
+  # Groups Function
+  # ============================================================================
+
+  GroupsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.groups.handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Events:
+        GetGroups:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups
+            Method: GET
+        CreateGroup:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups
+            Method: POST
+        GetGroup:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}
+            Method: GET
+        UpdateGroup:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}
+            Method: PUT
+        DeleteGroup:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}
+            Method: DELETE
+
+  # ============================================================================
+  # Wishlist Function
+  # ============================================================================
+
+  WishlistFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.wishlist.handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Events:
+        GetWishlist:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist
+            Method: GET
+        CreateItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist
+            Method: POST
+        GetItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist/{itemId}
+            Method: GET
+        UpdateItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist/{itemId}
+            Method: PUT
+        DeleteItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist/{itemId}
+            Method: DELETE
+        ReorderItems:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist/reorder
+            Method: PUT
+
+  # ============================================================================
+  # Purchases Function
+  # ============================================================================
+
+  PurchasesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.purchases.handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Events:
+        ClaimItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /purchases
+            Method: POST
+        UnclaimItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /purchases/{itemId}/{groupId}
+            Method: DELETE
+
+  # ============================================================================
+  # Invitations Function
+  # ============================================================================
+
+  InvitationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.invitations.handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Events:
+        GetInvitation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /invitations/{token}
+            Method: GET
+            Auth:
+              Authorizer: NONE  # Public endpoint
+        AcceptInvitation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /invitations/{token}/accept
+            Method: POST
+        CreateInvitation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}/members
+            Method: POST
+        RemoveMember:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}/members/{memberId}
+            Method: DELETE
+
+  # ============================================================================
+  # Photos Function
+  # ============================================================================
+
+  PhotosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.photos.handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Events:
+        UploadPhoto:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /photos/upload
+            Method: POST
+
+  # ============================================================================
+  # Cognito Triggers
+  # ============================================================================
+
+  CognitoPostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.cognito_triggers.post_confirmation_handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Description: Creates user profile in database after Cognito confirmation
+
+  CognitoPreSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handlers.cognito_triggers.pre_signup_handler
+      Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Description: Auto-confirms users in dev environment
+
+# ============================================================================
+# Outputs
+# ============================================================================
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway URL
+    Value: !Sub https://${PresentlyApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub ${Environment}-ApiUrl
+
+  ApiId:
+    Description: API Gateway ID
+    Value: !Ref PresentlyApi
+
+  PostConfirmationFunctionArn:
+    Description: ARN of Post-Confirmation Lambda function
+    Value: !GetAtt CognitoPostConfirmationFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-PostConfirmationFunctionArn
+
+  PreSignupFunctionArn:
+    Description: ARN of Pre-Signup Lambda function
+    Value: !GetAtt CognitoPreSignupFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-PreSignupFunctionArn

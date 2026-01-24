@@ -1,0 +1,254 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Presently Infrastructure - Cognito + S3 (Using Neon for Database)
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment name (dev or prod)
+
+  PostConfirmationLambdaArn:
+    Type: String
+    Default: ""
+    Description: ARN of Post-Confirmation Lambda function (optional, set after Lambda deployment)
+
+  PreSignUpLambdaArn:
+    Type: String
+    Default: ""
+    Description: ARN of Pre-SignUp Lambda function (optional, set after Lambda deployment)
+
+Conditions:
+  HasPostConfirmationLambda: !Not [!Equals [!Ref PostConfirmationLambdaArn, ""]]
+  HasPreSignUpLambda: !Not [!Equals [!Ref PreSignUpLambdaArn, ""]]
+  HasLambdaTriggers: !Or [!Condition HasPostConfirmationLambda, !Condition HasPreSignUpLambda]
+
+Resources:
+  # ============================================================================
+  # Cognito User Pool
+  # ============================================================================
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub presently-${Environment}
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: false
+        - Name: name
+          Required: true
+          Mutable: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      LambdaConfig:
+        PostConfirmation: !If [HasPostConfirmationLambda, !Ref PostConfirmationLambdaArn, !Ref "AWS::NoValue"]
+        PreSignUp: !If [HasPreSignUpLambda, !Ref PreSignUpLambdaArn, !Ref "AWS::NoValue"]
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub presently-web-${Environment}
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      PreventUserExistenceErrors: ENABLED
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      ReadAttributes:
+        - email
+        - name
+      WriteAttributes:
+        - email
+        - name
+
+  # ============================================================================
+  # S3 Bucket for Photos
+  # ============================================================================
+
+  PhotosBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub presently-photos-${Environment}-${AWS::Region}-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - '*'  # TODO: Restrict to your domain in production
+            AllowedMethods:
+              - PUT
+              - POST
+              - GET
+              - HEAD
+            AllowedHeaders:
+              - '*'
+            MaxAge: 3000
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteIncompleteUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+
+  # ============================================================================
+  # CloudFront Distribution for Photos (CDN)
+  # ============================================================================
+
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub OAI for presently-photos-${Environment}
+
+  PhotosBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PhotosBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOAI}
+            Action: s3:GetObject
+            Resource: !Sub ${PhotosBucket.Arn}/*
+
+  PhotosCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub Presently Photos CDN - ${Environment}
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt PhotosBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOAI}
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          Compress: true
+          DefaultTTL: 86400      # 1 day
+          MaxTTL: 31536000       # 1 year
+          MinTTL: 0
+        PriceClass: PriceClass_100  # Use only North America and Europe
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  # ============================================================================
+  # Lambda Execution Role
+  # ============================================================================
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub presently-lambda-role-${Environment}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource: !Sub '${PhotosBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !GetAtt PhotosBucket.Arn
+
+# ============================================================================
+# Outputs
+# ============================================================================
+
+Outputs:
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub ${Environment}-UserPoolId
+
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub ${Environment}-UserPoolClientId
+
+  UserPoolArn:
+    Description: Cognito User Pool ARN
+    Value: !GetAtt UserPool.Arn
+    Export:
+      Name: !Sub ${Environment}-UserPoolArn
+
+  PhotosBucketName:
+    Description: S3 Bucket for Photos
+    Value: !Ref PhotosBucket
+    Export:
+      Name: !Sub ${Environment}-PhotosBucket
+
+  PhotosCDNDomain:
+    Description: CloudFront CDN Domain for Photos
+    Value: !GetAtt PhotosCDN.DomainName
+    Export:
+      Name: !Sub ${Environment}-PhotosCDN
+
+  LambdaRoleArn:
+    Description: Lambda Execution Role ARN
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub ${Environment}-LambdaRole
+
+  Region:
+    Description: AWS Region
+    Value: !Ref AWS::Region
+    Export:
+      Name: !Sub ${Environment}-Region
