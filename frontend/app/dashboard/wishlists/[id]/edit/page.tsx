@@ -6,21 +6,7 @@ import { useAuth } from '@/lib/contexts/AuthContext'
 import { DashboardNav } from '@/components/DashboardNav'
 import { EditItemForm } from '@/components/EditItemForm'
 import { api } from '@/lib/api'
-
-type WishlistItem = {
-  id: string
-  name: string
-  description: string | null
-  url: string | null
-  price: number | null
-  photo_url: string | null
-  rank: number
-  user_id: string
-  groups: Array<{
-    id: string
-    name: string
-  }>
-}
+import type { WishlistItem } from '@/lib/types'
 
 export default function EditItemPage() {
   const params = useParams()

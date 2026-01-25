@@ -103,7 +103,7 @@ export default function GroupsPage() {
                     </p>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {group.memberCount} {group.memberCount === 1 ? 'member' : 'members'}
+                    {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
                   </p>
                 </Link>
               ))}

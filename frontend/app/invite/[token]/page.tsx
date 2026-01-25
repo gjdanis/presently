@@ -31,10 +31,10 @@ export default function InvitePage({ params }: InvitePageProps) {
   useEffect(() => {
     if (!token || authLoading) return;
 
-    async function loadInvitation() {
+    async function loadInvitation(inviteToken: string) {
       try {
         // Fetch invitation details from backend
-        const invitationData = await api.getInvitation(token);
+        const invitationData = await api.getInvitation(inviteToken);
         setInvitation(invitationData);
 
         // If user is logged in, auto-accept
@@ -50,7 +50,7 @@ export default function InvitePage({ params }: InvitePageProps) {
       }
     }
 
-    loadInvitation();
+    loadInvitation(token);
   }, [token, isAuthenticated, authLoading]);
 
   async function acceptInvitation() {

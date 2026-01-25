@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { DeleteItemButton } from '@/components/DeleteItemButton'
 import { api } from '@/lib/api'
+import type { WishlistItem } from '@/lib/types'
 import {
   DndContext,
   closestCenter,
@@ -22,20 +23,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-
-type WishlistItem = {
-  id: string
-  name: string
-  description: string | null
-  url: string | null
-  price: number | null
-  photo_url: string | null
-  rank: number
-  groups: Array<{
-    id: string
-    name: string
-  }>
-}
 
 function SortableItem({ item }: { item: WishlistItem }) {
   const {
@@ -167,7 +154,7 @@ export function DraggableWishlist({
         rank: index + 1,
       }))
 
-      await api.reorderItems({ items: updates })
+      await api.reorderItems(updates)
 
       if (onReorder) {
         onReorder()

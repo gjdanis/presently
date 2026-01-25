@@ -7,20 +7,7 @@ import Link from 'next/link'
 import { DashboardNav } from '@/components/DashboardNav'
 import { DraggableWishlist } from '@/components/DraggableWishlist'
 import { api } from '@/lib/api'
-
-type WishlistItem = {
-  id: string
-  name: string
-  description: string | null
-  url: string | null
-  price: number | null
-  photo_url: string | null
-  rank: number
-  groups: Array<{
-    id: string
-    name: string
-  }>
-}
+import type { WishlistItem } from '@/lib/types'
 
 export default function WishlistsPage() {
   const { isAuthenticated, isLoading, profile } = useAuth()

@@ -68,7 +68,8 @@ echo "🔧 Updating infrastructure stack with Lambda triggers..."
 
 INFRA_STACK_NAME="presently-infra-$ENV"
 
-aws cloudformation update-stack \
+# Try to update the stack, but don't fail if no updates are needed
+if aws cloudformation update-stack \
     --stack-name "$INFRA_STACK_NAME" \
     --region "$REGION" \
     --use-previous-template \
@@ -76,12 +77,14 @@ aws cloudformation update-stack \
         ParameterKey=Environment,UsePreviousValue=true \
         ParameterKey=PostConfirmationLambdaArn,ParameterValue="$POST_CONFIRMATION_ARN" \
         ParameterKey=PreSignUpLambdaArn,ParameterValue="$PRE_SIGNUP_ARN" \
-    --capabilities CAPABILITY_NAMED_IAM
-
-echo "⏳ Waiting for stack update to complete..."
-aws cloudformation wait stack-update-complete \
-    --stack-name "$INFRA_STACK_NAME" \
-    --region "$REGION"
+    --capabilities CAPABILITY_NAMED_IAM 2>&1 | grep -q "No updates are to be performed"; then
+    echo "ℹ️  No changes needed - triggers already configured"
+else
+    echo "⏳ Waiting for stack update to complete..."
+    aws cloudformation wait stack-update-complete \
+        --stack-name "$INFRA_STACK_NAME" \
+        --region "$REGION"
+fi
 
 echo ""
 echo "✅ Cognito Lambda triggers configured successfully!"

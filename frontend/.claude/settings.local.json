@@ -1,8 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(aws logs tail:*)",
-      "Read(//Users/joe/Documents/presently-old/**)",
       "Bash(npm run build:*)"
     ],
     "deny": [],

@@ -13,6 +13,10 @@ Parameters:
     Type: String
     Description: Neon Postgres connection string
     NoEcho: true
+  SenderEmail:
+    Type: String
+    Description: Email address to send invitations from (must be verified in SES)
+    Default: ""
 
 Globals:
   Function:
@@ -27,6 +31,8 @@ Globals:
         COGNITO_USER_POOL_ID: !Sub '{{resolve:ssm:/${Environment}/UserPoolId}}'
         COGNITO_CLIENT_ID: !Sub '{{resolve:ssm:/${Environment}/UserPoolClientId}}'
         ENVIRONMENT: !Ref Environment
+        SENDER_EMAIL: !Ref SenderEmail
+        FRONTEND_URL: !Sub 'https://${Environment}.presently.com'
 
 Resources:
   # ============================================================================

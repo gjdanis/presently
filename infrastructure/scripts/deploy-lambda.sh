@@ -22,6 +22,14 @@ if [ -z "$DATABASE_URL" ]; then
     exit 1
 fi
 
+# Check if SENDER_EMAIL is set
+if [ -z "$SENDER_EMAIL" ]; then
+    echo "❌ Error: SENDER_EMAIL environment variable is required"
+    echo "   Set it with your verified SES email address:"
+    echo "   export SENDER_EMAIL='your-email@example.com'"
+    exit 1
+fi
+
 STACK_NAME="presently-lambda-$ENV"
 REGION="us-east-1"
 
@@ -37,6 +45,7 @@ sam deploy \
     --parameter-overrides \
         Environment="$ENV" \
         NeonDatabaseURL="$DATABASE_URL" \
+        SenderEmail="$SENDER_EMAIL" \
     --capabilities CAPABILITY_IAM \
     --resolve-s3 \
     --no-fail-on-empty-changeset

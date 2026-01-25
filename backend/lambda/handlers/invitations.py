@@ -1,11 +1,13 @@
 """Group invitations Lambda handler."""
 
+import os
 import secrets
 from typing import Any
 
 from common.auth import require_auth
 from common.db import execute_insert, execute_query, execute_update
 from common.decorators import handle_cors
+from common.email_templates import get_existing_user_email, get_new_user_email
 from common.models import (
     InvitationAcceptResponse,
     InvitationCreate,
@@ -13,6 +15,7 @@ from common.models import (
     InviterInfo,
 )
 from common.responses import conflict, created, error, forbidden, not_found, success
+from common.emails import send_email
 from common.validators import get_path_parameter, validate_request_body
 
 
@@ -73,18 +76,23 @@ def create_invitation(event: dict[str, Any], user_id: str, group_id: str) -> dic
     if validation_error:
         return validation_error
 
-    # Check if user is admin of the group
-    admin_query = """
-        SELECT role FROM group_memberships
-        WHERE user_id = %s AND group_id = %s
+    # Check if user is admin of the group and get group details
+    group_query = """
+        SELECT g.name, g.description, gm.role
+        FROM groups g
+        JOIN group_memberships gm ON g.id = gm.group_id
+        WHERE gm.user_id = %s AND gm.group_id = %s
     """
-    membership = execute_query(admin_query, (user_id, group_id), fetch_one=True)
+    group_result = execute_query(group_query, (user_id, group_id), fetch_one=True)
 
-    if not membership:
+    if not group_result:
         return forbidden("You are not a member of this group")
 
-    if membership["role"] != "admin":
+    if group_result["role"] != "admin":
         return forbidden("Only group admins can invite members")
+
+    group_name = group_result["name"]
+    group_description = group_result["description"]
 
     # Check if invitee is already a member
     existing_member_query = """
@@ -111,6 +119,17 @@ def create_invitation(event: dict[str, Any], user_id: str, group_id: str) -> dic
     if existing_invite:
         return conflict("An invitation has already been sent to this email")
 
+    # Check if user exists in the system (has a profile)
+    user_exists_query = "SELECT id, name, email FROM profiles WHERE email = %s"
+    existing_user = execute_query(user_exists_query, (invite_data.email,), fetch_one=True)
+    user_exists = existing_user is not None
+
+    # Get inviter info for email
+    inviter_query = "SELECT name, email FROM profiles WHERE id = %s"
+    inviter = execute_query(inviter_query, (user_id,), fetch_one=True)
+    inviter_name = inviter["name"] if inviter else "Someone"
+    inviter_email = inviter["email"] if inviter else ""
+
     # Generate unique token
     token = secrets.token_urlsafe(32)
 
@@ -128,11 +147,41 @@ def create_invitation(event: dict[str, Any], user_id: str, group_id: str) -> dic
     if not result:
         return error("Failed to create invitation", 500)
 
-    # TODO: Send email with invitation link
-    # For now, just return the token
-    invite_url = f"https://presently.com/invite/{token}"
+    # Build invitation URL
+    frontend_url = os.environ.get("FRONTEND_URL", "https://presently.com")
+    invite_url = f"{frontend_url}/invite/{token}"
 
-    return created({"added_directly": False, "invite_url": invite_url, "email_sent": False})
+    # Send appropriate email based on whether user exists
+    email_sent = False
+
+    if user_exists:
+        # User already has account - send "join group" email
+        subject, html_body, text_body = get_existing_user_email(
+            inviter_name=inviter_name,
+            group_name=group_name,
+            group_description=group_description,
+            invite_url=invite_url,
+        )
+        email_sent = send_email(invite_data.email, subject, html_body, text_body)
+    else:
+        # New user - send "register and join" email
+        subject, html_body, text_body = get_new_user_email(
+            inviter_name=inviter_name,
+            inviter_email=inviter_email,
+            group_name=group_name,
+            group_description=group_description,
+            invite_url=invite_url,
+        )
+        email_sent = send_email(invite_data.email, subject, html_body, text_body)
+
+    return created(
+        {
+            "added_directly": False,
+            "invite_url": invite_url,
+            "email_sent": email_sent,
+            "user_exists": user_exists,
+        }
+    )
 
 
 def get_invitation(token: str) -> dict[str, Any]:

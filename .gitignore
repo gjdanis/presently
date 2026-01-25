@@ -43,8 +43,7 @@ samconfig.toml
 .chalice/
 
 # Environment
-.env
-.env.local
+.env.*
 *.pem
 *.key
 

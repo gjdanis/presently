@@ -4,25 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ImageUpload } from '@/components/ImageUpload'
 import { api } from '@/lib/api'
-
-type Group = {
-  id: string
-  name: string
-}
-
-type WishlistItem = {
-  id: string
-  name: string
-  description: string | null
-  url: string | null
-  price: number | null
-  photo_url: string | null
-  rank: number
-  groups: Array<{
-    id: string
-    name: string
-  }>
-}
+import type { WishlistItem, Group } from '@/lib/types'
 
 export function EditItemForm({ item }: { item: WishlistItem }) {
   const router = useRouter()
@@ -38,7 +20,7 @@ export function EditItemForm({ item }: { item: WishlistItem }) {
     url: item.url || '',
     price: item.price ? item.price.toString() : '',
   })
-  const [photoUrl, setPhotoUrl] = useState<string | null>(item.photo_url)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(item.photo_url || null)
 
   useEffect(() => {
     loadGroups()
@@ -47,7 +29,7 @@ export function EditItemForm({ item }: { item: WishlistItem }) {
   async function loadGroups() {
     try {
       const data = await api.getGroups()
-      setGroups(data.groups.map((g: any) => ({ id: g.id, name: g.name })))
+      setGroups(data.groups)
     } catch (error) {
       console.error('Error loading groups:', error)
     }

@@ -241,8 +241,9 @@ deploy:
 	@echo "📋 Your API is ready at:"
 	@aws cloudformation describe-stacks \
 		--stack-name presently-lambda-$(ENV) \
+		--region us-east-1 \
 		--query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
-		--output text
+		--output text 2>/dev/null || echo "Use the URL from deploy-lambda output above"
 
 # Run database migrations
 db-migrate:
