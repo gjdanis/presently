@@ -55,7 +55,10 @@ export default function GroupDetailPage() {
     return null
   }
 
-  const currentUserMember = groupData.members.find(m => m.userId === profile.id)
+  // Handle both userId (camelCase from type) and user_id (snake_case from API)
+  const currentUserMember = groupData.members.find(m =>
+    (m as any).userId === profile.id || (m as any).user_id === profile.id
+  )
   const isAdmin = currentUserMember?.role === 'admin'
 
   return (
@@ -93,21 +96,24 @@ export default function GroupDetailPage() {
 
           {/* Members Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Members</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Members</h2>
             <div className="flex flex-wrap gap-2">
-              {groupData.members.map((member) => (
-                <span
-                  key={member.userId}
-                  className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm"
-                >
-                  {member.name}
-                  {member.role === 'admin' && (
-                    <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">
-                      (Admin)
-                    </span>
-                  )}
-                </span>
-              ))}
+              {groupData.members.map((member: any) => {
+                const memberId = member.userId || member.user_id
+                return (
+                  <span
+                    key={memberId}
+                    className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-900 dark:text-gray-100"
+                  >
+                    {member.name}
+                    {member.role === 'admin' && (
+                      <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">
+                        (Admin)
+                      </span>
+                    )}
+                  </span>
+                )
+              })}
             </div>
           </div>
 
@@ -120,51 +126,58 @@ export default function GroupDetailPage() {
                 </p>
               </div>
             ) : (
-              groupData.wishlists.map((userWishlist) => (
-                <div key={userWishlist.userId} className="bg-white dark:bg-gray-800 rounded-lg shadow">
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-4">{userWishlist.userName}'s Wishlist</h3>
-                    {userWishlist.items.length === 0 ? (
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">No items yet</p>
-                    ) : (
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {userWishlist.items.map((item) => (
-                          <div key={item.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                            {item.photoUrl && (
-                              <img
-                                src={item.photoUrl}
-                                alt={item.name}
-                                className="w-full h-48 object-cover rounded-lg mb-3"
-                              />
-                            )}
-                            <h4 className="font-semibold mb-1">{item.name}</h4>
-                            {item.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                {item.description}
-                              </p>
-                            )}
-                            {item.price && (
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                ${item.price.toFixed(2)}
-                              </p>
-                            )}
-                            {item.url && (
-                              <a
-                                href={item.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                              >
-                                View Product →
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              groupData.wishlists.map((userWishlist: any) => {
+                const userId = userWishlist.userId || userWishlist.user_id
+                const userName = userWishlist.userName || userWishlist.user_name
+                return (
+                  <div key={userId} className="bg-white dark:bg-gray-800 rounded-lg shadow">
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">{userName}'s Wishlist</h3>
+                      {userWishlist.items.length === 0 ? (
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">No items yet</p>
+                      ) : (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {userWishlist.items.map((item: any) => {
+                            const photoUrl = item.photoUrl || item.photo_url
+                            return (
+                              <div key={item.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                {photoUrl && (
+                                  <img
+                                    src={photoUrl}
+                                    alt={item.name}
+                                    className="w-full h-48 object-cover rounded-lg mb-3"
+                                  />
+                                )}
+                                <h4 className="font-semibold mb-1 text-gray-900 dark:text-gray-100">{item.name}</h4>
+                                {item.description && (
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                    {item.description}
+                                  </p>
+                                )}
+                                {item.price && (
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    ${Number(item.price).toFixed(2)}
+                                  </p>
+                                )}
+                                {item.url && (
+                                  <a
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                  >
+                                    View Product →
+                                  </a>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>

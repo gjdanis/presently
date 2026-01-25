@@ -27,15 +27,21 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
       setEmail('')
       setIsAdding(false)
 
-      if (data.addedDirectly) {
+      // Handle both snake_case and camelCase from API
+      const addedDirectly = data.addedDirectly || data.added_directly
+      const inviteUrlFromApi = data.inviteUrl || data.invite_url
+
+      if (addedDirectly) {
         setSuccess('User added to group successfully!')
-      } else {
+      } else if (inviteUrlFromApi) {
         // Extract token from backend URL and construct proper frontend URL
-        const token = data.inviteUrl.split('/').pop()
+        const token = inviteUrlFromApi.split('/').pop()
         const frontendUrl = `${window.location.origin}/invite/${token}`
 
         setSuccess('Invitation created! Share this link with them:')
         setInviteUrl(frontendUrl)
+      } else {
+        setError('Unexpected response from server')
       }
     } catch (err: any) {
       console.error('Error sending invitation:', err)

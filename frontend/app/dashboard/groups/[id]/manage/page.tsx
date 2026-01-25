@@ -34,8 +34,10 @@ export default function ManageGroupPage() {
     try {
       const data = await api.getGroup(groupId)
 
-      // Check if user is admin
-      const currentUserMember = data.members.find(m => m.userId === profile?.id)
+      // Check if user is admin (handle both userId and user_id)
+      const currentUserMember = data.members.find((m: any) =>
+        m.userId === profile?.id || m.user_id === profile?.id
+      )
       if (!currentUserMember || currentUserMember.role !== 'admin') {
         router.push(`/dashboard/groups/${groupId}`)
         return
@@ -103,39 +105,42 @@ export default function ManageGroupPage() {
 
           {/* Members Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Members ({groupData.members.length})</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Members ({groupData.members.length})</h2>
             <div className="space-y-3">
-              {groupData.members.map((member) => (
-                <div
-                  key={member.userId}
-                  className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">{member.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {member.email}
-                    </p>
+              {groupData.members.map((member: any) => {
+                const memberId = member.userId || member.user_id
+                return (
+                  <div
+                    key={memberId}
+                    className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {member.email}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          member.role === 'admin'
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
+                      >
+                        {member.role}
+                      </span>
+                      {memberId !== profile.id && (
+                        <RemoveMemberButton
+                          groupId={groupId}
+                          userId={memberId}
+                          userName={member.name}
+                        />
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        member.role === 'admin'
-                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                      }`}
-                    >
-                      {member.role}
-                    </span>
-                    {member.userId !== profile.id && (
-                      <RemoveMemberButton
-                        groupId={groupId}
-                        userId={member.userId}
-                        userName={member.name}
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
