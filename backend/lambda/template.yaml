@@ -17,6 +17,10 @@ Parameters:
     Type: String
     Description: Email address to send invitations from (must be verified in SES)
     Default: ""
+  FrontendURL:
+    Type: String
+    Description: Frontend URL for invitation links
+    Default: "https://presently-nu.vercel.app"
 
 Globals:
   Function:
@@ -32,7 +36,7 @@ Globals:
         COGNITO_CLIENT_ID: !Sub '{{resolve:ssm:/${Environment}/UserPoolClientId}}'
         ENVIRONMENT: !Ref Environment
         SENDER_EMAIL: !Ref SenderEmail
-        FRONTEND_URL: !Sub 'https://${Environment}.presently.com'
+        FRONTEND_URL: !Ref FrontendURL
 
 Resources:
   # ============================================================================

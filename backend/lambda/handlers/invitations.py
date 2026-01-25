@@ -274,9 +274,13 @@ def accept_invitation(user_id: str, token: str) -> dict[str, Any]:
     membership_query = """
         INSERT INTO group_memberships (user_id, group_id, role)
         VALUES (%s, %s, %s)
+        RETURNING id
     """
 
-    execute_insert(membership_query, (user_id, group_id, role))
+    result = execute_insert(membership_query, (user_id, group_id, role))
+
+    if not result:
+        return error("Failed to add user to group", 500)
 
     # Mark invitation as accepted
     execute_update("UPDATE group_invitations SET accepted_at = NOW() WHERE token = %s", (token,))

@@ -12,9 +12,21 @@ PIP := $(VENV_DIR)/bin/pip
 # Check if virtual environment exists
 VENV_EXISTS := $(shell [ -d "$(VENV_DIR)" ] && echo 1 || echo 0)
 
+# Load environment variables from .env.development if it exists
+ifneq (,$(wildcard .env.development))
+    include .env.development
+    export
+endif
+
 # Default target
 help:
 	@echo "Presently - AWS Makefile"
+	@echo ""
+	@if [ -f ".env.development" ]; then \
+		echo "✅ Environment variables loaded from .env.development"; \
+	else \
+		echo "⚠️  .env.development not found. Copy .env.example to .env.development"; \
+	fi
 	@echo ""
 	@echo "Backend Commands:"
 	@echo "  venv            - Create Python virtual environment"
@@ -42,11 +54,11 @@ help:
 	@echo ""
 	@echo "Deployment Commands:"
 	@echo "  deploy-infra    - Deploy infrastructure (Cognito, S3)"
-	@echo "  deploy-lambda   - Deploy Lambda functions"
+	@echo "  deploy-lambda   - Deploy Lambda functions (uses .env.development)"
 	@echo "  configure-cognito-triggers - Configure Cognito Lambda triggers"
 	@echo "  deploy          - Deploy infrastructure, Lambda, and configure triggers"
-	@echo "  db-migrate      - Run database migrations"
-	@echo "  db-shell        - Open PostgreSQL shell"
+	@echo "  db-migrate      - Run database migrations (uses .env.development)"
+	@echo "  db-shell        - Open PostgreSQL shell (uses .env.development)"
 	@echo ""
 	@if [ "$(VENV_EXISTS)" = "0" ]; then \
 		echo "⚠️  Virtual environment not found. Run 'make venv' or 'make install-dev' to create it."; \
@@ -219,13 +231,12 @@ configure-cognito-triggers:
 # Deploy everything
 deploy:
 	@if [ -z "$(ENV)" ]; then \
-		echo "Error: ENV variable is required. Usage: make deploy ENV=prod"; \
+		echo "❌ Error: ENV variable is required. Usage: make deploy ENV=prod"; \
 		exit 1; \
 	fi
 	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "Error: DATABASE_URL environment variable is required"; \
-		echo "Set it with your Neon Postgres connection string:"; \
-		echo "  export DATABASE_URL='postgresql://user:pass@host/db'"; \
+		echo "❌ Error: DATABASE_URL not set in .env.development"; \
+		echo "   Copy .env.example to .env.development and fill in your values"; \
 		exit 1; \
 	fi
 	@echo "🚀 Starting full deployment for environment: $(ENV)"
@@ -247,17 +258,20 @@ deploy:
 
 # Run database migrations
 db-migrate:
-	@echo "Running database migrations..."
+	@echo "🗃️  Running database migrations..."
 	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "Error: DATABASE_URL environment variable is required"; \
+		echo "❌ Error: DATABASE_URL not set in .env.development"; \
+		echo "   Copy .env.example to .env.development and fill in your values"; \
 		exit 1; \
 	fi
 	psql "$(DATABASE_URL)" -f $(BACKEND_DIR)/migrations/schema.sql
+	@echo "✅ Database migrations complete!"
 
 # Open database shell
 db-shell:
 	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "Error: DATABASE_URL environment variable is required"; \
+		echo "❌ Error: DATABASE_URL not set in .env.development"; \
+		echo "   Copy .env.example to .env.development and fill in your values"; \
 		exit 1; \
 	fi
 	psql "$(DATABASE_URL)"

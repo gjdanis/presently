@@ -6,6 +6,12 @@ set -e
 
 ENV=${1:-dev}
 
+# Load environment variables from .env.development if it exists
+if [ -f "../../.env.development" ]; then
+    echo "📄 Loading environment variables from .env.development"
+    export $(cat ../../.env.development | grep -v '^#' | grep -v '^$' | xargs)
+fi
+
 echo "🚀 Deploying Lambda functions for environment: $ENV"
 
 # Validate environment
@@ -30,6 +36,12 @@ if [ -z "$SENDER_EMAIL" ]; then
     exit 1
 fi
 
+# Set default FRONTEND_URL if not provided
+if [ -z "$FRONTEND_URL" ]; then
+    echo "⚠️  Warning: FRONTEND_URL not set, using default: https://presently-nu.vercel.app"
+    FRONTEND_URL="https://presently-nu.vercel.app"
+fi
+
 STACK_NAME="presently-lambda-$ENV"
 REGION="us-east-1"
 
@@ -46,6 +58,7 @@ sam deploy \
         Environment="$ENV" \
         NeonDatabaseURL="$DATABASE_URL" \
         SenderEmail="$SENDER_EMAIL" \
+        FrontendURL="$FRONTEND_URL" \
     --capabilities CAPABILITY_IAM \
     --resolve-s3 \
     --no-fail-on-empty-changeset
