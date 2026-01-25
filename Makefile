@@ -1,9 +1,10 @@
-.PHONY: help install install-dev test test-quick test-cov test-integration test-integration-cov lint format check clean deploy-infra deploy-lambda configure-cognito-triggers deploy db-migrate db-shell venv docker-test-up docker-test-down
+.PHONY: help install install-dev test test-quick test-cov test-integration test-integration-cov lint format check clean deploy-infra deploy-lambda configure-cognito-triggers deploy db-migrate db-shell venv docker-test-up docker-test-down frontend frontend-install frontend-build frontend-lint frontend-type-check
 
 # Variables
 BACKEND_DIR := backend
 LAMBDA_DIR := $(BACKEND_DIR)/lambda
 INFRA_DIR := infrastructure
+FRONTEND_DIR := frontend
 VENV_DIR := $(BACKEND_DIR)/venv
 PYTHON := $(VENV_DIR)/bin/python3
 PIP := $(VENV_DIR)/bin/pip
@@ -15,7 +16,7 @@ VENV_EXISTS := $(shell [ -d "$(VENV_DIR)" ] && echo 1 || echo 0)
 help:
 	@echo "Presently - AWS Makefile"
 	@echo ""
-	@echo "Available targets:"
+	@echo "Backend Commands:"
 	@echo "  venv            - Create Python virtual environment"
 	@echo "  install         - Install production dependencies (creates venv if needed)"
 	@echo "  install-dev     - Install production + development dependencies"
@@ -31,6 +32,15 @@ help:
 	@echo "  check           - Run type checking with mypy"
 	@echo "  clean           - Remove build artifacts and cache files"
 	@echo "  clean-all       - Remove build artifacts and virtual environment"
+	@echo ""
+	@echo "Frontend Commands:"
+	@echo "  frontend        - Start frontend development server (localhost:3000)"
+	@echo "  frontend-install - Install frontend dependencies (npm install)"
+	@echo "  frontend-build  - Build frontend for production"
+	@echo "  frontend-lint   - Lint frontend code"
+	@echo "  frontend-type-check - Type check frontend code"
+	@echo ""
+	@echo "Deployment Commands:"
 	@echo "  deploy-infra    - Deploy infrastructure (Cognito, S3)"
 	@echo "  deploy-lambda   - Deploy Lambda functions"
 	@echo "  configure-cognito-triggers - Configure Cognito Lambda triggers"
@@ -254,3 +264,40 @@ db-shell:
 # Pre-commit checks (run before committing)
 pre-commit: format lint test
 	@echo "✅ All pre-commit checks passed!"
+
+# Frontend commands
+frontend:
+	@echo "🚀 Starting frontend development server..."
+	@if [ ! -d "$(FRONTEND_DIR)/node_modules" ]; then \
+		echo "📦 node_modules not found. Run 'make frontend-install' first"; \
+		exit 1; \
+	fi
+	cd $(FRONTEND_DIR) && npm run dev
+
+frontend-install:
+	@echo "📦 Installing frontend dependencies..."
+	@if ! command -v node >/dev/null 2>&1; then \
+		echo "❌ Error: Node.js is not installed"; \
+		echo ""; \
+		echo "Install Node.js using one of:"; \
+		echo "  - nvm (recommended): curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"; \
+		echo "    Then run: nvm install 20 && nvm use 20"; \
+		echo "  - Homebrew: brew install node"; \
+		echo "  - Official installer: https://nodejs.org/"; \
+		exit 1; \
+	fi
+	cd $(FRONTEND_DIR) && npm install
+	@echo "✅ Frontend dependencies installed"
+
+frontend-build:
+	@echo "🏗️  Building frontend for production..."
+	cd $(FRONTEND_DIR) && npm run build
+	@echo "✅ Frontend build complete"
+
+frontend-lint:
+	@echo "🔍 Linting frontend code..."
+	cd $(FRONTEND_DIR) && npm run lint
+
+frontend-type-check:
+	@echo "🔍 Type checking frontend code..."
+	cd $(FRONTEND_DIR) && npm run type-check

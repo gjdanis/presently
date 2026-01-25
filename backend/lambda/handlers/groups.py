@@ -5,11 +5,13 @@ from uuid import UUID
 
 from common.auth import require_auth
 from common.db import execute_delete, execute_insert, execute_query, execute_update
+from common.decorators import handle_cors
 from common.models import GroupCreate, GroupMemberResponse, GroupResponse, GroupUpdate
 from common.responses import conflict, created, error, forbidden, no_content, not_found, success
 from common.validators import get_path_parameter, validate_request_body
 
 
+@handle_cors("GET,POST,PUT,DELETE,OPTIONS")
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle /groups/* endpoints."""
     http_method = event["httpMethod"]

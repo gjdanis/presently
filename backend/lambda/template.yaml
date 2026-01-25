@@ -71,6 +71,14 @@ Resources:
             RestApiId: !Ref PresentlyApi
             Path: /profile
             Method: PUT
+        OptionsProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /profile
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
 
   # ============================================================================
   # Groups Function
@@ -113,6 +121,22 @@ Resources:
             RestApiId: !Ref PresentlyApi
             Path: /groups/{groupId}
             Method: DELETE
+        OptionsGroups:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        OptionsGroupsId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
 
   # ============================================================================
   # Wishlist Function
@@ -161,6 +185,30 @@ Resources:
             RestApiId: !Ref PresentlyApi
             Path: /wishlist/reorder
             Method: PUT
+        OptionsWishlist:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        OptionsWishlistId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist/{itemId}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        OptionsWishlistReorder:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /wishlist/reorder
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
 
   # ============================================================================
   # Purchases Function
@@ -185,6 +233,22 @@ Resources:
             RestApiId: !Ref PresentlyApi
             Path: /purchases/{itemId}/{groupId}
             Method: DELETE
+        OptionsPurchases:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /purchases
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        OptionsPurchasesId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /purchases/{itemId}/{groupId}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
 
   # ============================================================================
   # Invitations Function
@@ -223,6 +287,38 @@ Resources:
             RestApiId: !Ref PresentlyApi
             Path: /groups/{groupId}/members/{memberId}
             Method: DELETE
+        OptionsInvitations:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /invitations/{token}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        OptionsInvitationsAccept:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /invitations/{token}/accept
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        OptionsGroupMembers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}/members
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        OptionsGroupMembersId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /groups/{groupId}/members/{memberId}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
 
   # ============================================================================
   # Photos Function
@@ -241,6 +337,14 @@ Resources:
             RestApiId: !Ref PresentlyApi
             Path: /photos/upload
             Method: POST
+        OptionsPhotosUpload:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PresentlyApi
+            Path: /photos/upload
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
 
   # ============================================================================
   # Cognito Triggers

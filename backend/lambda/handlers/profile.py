@@ -5,6 +5,7 @@ from typing import Any
 
 from common.auth import require_auth
 from common.db import execute_insert, execute_query, execute_update
+from common.decorators import handle_cors
 from common.logger import setup_logger
 from common.models import ProfileCreate, ProfileResponse, ProfileUpdate
 from common.responses import error, not_found, server_error, success
@@ -13,6 +14,7 @@ from common.validators import validate_request_body
 logger = setup_logger(__name__)
 
 
+@handle_cors("GET,PUT,OPTIONS")
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle /profile endpoints."""
     start_time = time.time()

@@ -5,6 +5,7 @@ from typing import Any
 
 from common.auth import require_auth
 from common.db import execute_insert, execute_query, execute_update
+from common.decorators import handle_cors
 from common.models import (
     InvitationAcceptResponse,
     InvitationCreate,
@@ -15,6 +16,7 @@ from common.responses import conflict, created, error, forbidden, not_found, suc
 from common.validators import get_path_parameter, validate_request_body
 
 
+@handle_cors("GET,POST,DELETE,OPTIONS")
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle /invitations/* and /groups/{groupId}/members endpoints."""
     http_method = event["httpMethod"]

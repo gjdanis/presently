@@ -8,10 +8,12 @@ import boto3
 from botocore.exceptions import ClientError
 
 from common.auth import require_auth
+from common.decorators import handle_cors
 from common.models import PresignedUrlResponse
 from common.responses import created, error, server_error
 
 
+@handle_cors("POST,OPTIONS")
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle /photos/* endpoints."""
     http_method = event["httpMethod"]

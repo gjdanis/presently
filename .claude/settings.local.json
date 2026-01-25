@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(aws logs tail:*)"
+      "Bash(aws logs tail:*)",
+      "Read(//Users/joe/Documents/presently-old/**)"
     ],
     "deny": [],
     "ask": []

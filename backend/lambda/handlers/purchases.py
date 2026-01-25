@@ -4,11 +4,13 @@ from typing import Any
 
 from common.auth import require_auth
 from common.db import execute_delete, execute_insert, execute_query
+from common.decorators import handle_cors
 from common.models import PurchaseCreate, PurchaseResponse
 from common.responses import conflict, created, error, forbidden, no_content, not_found
 from common.validators import get_path_parameter, validate_request_body
 
 
+@handle_cors("POST,DELETE,OPTIONS")
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle /purchases/* endpoints."""
     http_method = event["httpMethod"]
