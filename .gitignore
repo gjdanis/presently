@@ -44,6 +44,8 @@ samconfig.toml
 
 # Environment
 .env.*
+!.env.example
+!.env.local.example
 *.pem
 *.key
 

@@ -1,318 +1,307 @@
-.PHONY: help install install-dev test test-quick test-cov test-integration test-integration-cov lint format check clean deploy-infra deploy-lambda configure-cognito-triggers deploy db-migrate db-shell venv docker-test-up docker-test-down frontend frontend-install frontend-build frontend-lint frontend-type-check
+.PHONY: help install test lint format frontend backend db-local-up db-local-down seed deploy-dev clean
 
 # Variables
 BACKEND_DIR := backend
 LAMBDA_DIR := $(BACKEND_DIR)/lambda
-INFRA_DIR := infrastructure
 FRONTEND_DIR := frontend
 VENV_DIR := $(BACKEND_DIR)/venv
-PYTHON := $(VENV_DIR)/bin/python3
-PIP := $(VENV_DIR)/bin/pip
+PYTHON := $(shell pwd)/$(VENV_DIR)/bin/python3
+PIP := $(shell pwd)/$(VENV_DIR)/bin/pip
 
 # Check if virtual environment exists
 VENV_EXISTS := $(shell [ -d "$(VENV_DIR)" ] && echo 1 || echo 0)
 
-# Load environment variables from .env.development if it exists
-ifneq (,$(wildcard .env.development))
-    include .env.development
-    export
-endif
-
 # Default target
 help:
-	@echo "Presently - AWS Makefile"
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║                Presently - Development Makefile                ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
 	@echo ""
-	@if [ -f ".env.development" ]; then \
-		echo "✅ Environment variables loaded from .env.development"; \
-	else \
-		echo "⚠️  .env.development not found. Copy .env.example to .env.development"; \
-	fi
+	@echo "🚀 Quick Start:"
+	@echo "  make install        - Install all dependencies"
+	@echo "  make db-local-up    - Start local Postgres database"
+	@echo "  make seed           - Seed database with test data"
+	@echo "  make backend        - Start backend API (localhost:8000)"
+	@echo "  make frontend       - Start frontend (localhost:3000)"
 	@echo ""
-	@echo "Backend Commands:"
-	@echo "  venv            - Create Python virtual environment"
-	@echo "  install         - Install production dependencies (creates venv if needed)"
-	@echo "  install-dev     - Install production + development dependencies"
-	@echo "  test            - Run unit tests"
-	@echo "  test-cov        - Run unit tests with coverage report"
-	@echo "  test-quick      - Run unit tests (fast, no coverage)"
-	@echo "  test-integration - Run integration tests (requires Docker)"
-	@echo "  test-integration-cov - Run integration tests with coverage"
-	@echo "  docker-test-up  - Start test database in Docker"
-	@echo "  docker-test-down - Stop test database"
-	@echo "  lint            - Run ruff linter"
-	@echo "  format          - Format code with ruff"
-	@echo "  check           - Run type checking with mypy"
-	@echo "  clean           - Remove build artifacts and cache files"
-	@echo "  clean-all       - Remove build artifacts and virtual environment"
+	@echo "🧪 Testing & Quality:"
+	@echo "  make test           - Run all tests (unit + integration)"
+	@echo "  make lint           - Lint backend AND frontend code"
+	@echo "  make format         - Format all code"
 	@echo ""
-	@echo "Frontend Commands:"
-	@echo "  frontend        - Start frontend development server (localhost:3000)"
-	@echo "  frontend-install - Install frontend dependencies (npm install)"
-	@echo "  frontend-build  - Build frontend for production"
-	@echo "  frontend-lint   - Lint frontend code"
-	@echo "  frontend-type-check - Type check frontend code"
+	@echo "🗄️  Database:"
+	@echo "  make db-local-up    - Start local Postgres"
+	@echo "  make db-local-down  - Stop local Postgres"
+	@echo "  make seed           - Seed local database with test data"
+	@echo "  make db-migrate     - Run migrations on dev database"
 	@echo ""
-	@echo "Deployment Commands:"
-	@echo "  deploy-infra    - Deploy infrastructure (Cognito, S3)"
-	@echo "  deploy-lambda   - Deploy Lambda functions (uses .env.development)"
-	@echo "  configure-cognito-triggers - Configure Cognito Lambda triggers"
-	@echo "  deploy          - Deploy infrastructure, Lambda, and configure triggers"
-	@echo "  db-migrate      - Run database migrations (uses .env.development)"
-	@echo "  db-shell        - Open PostgreSQL shell (uses .env.development)"
+	@echo "🚢 Deployment:"
+	@echo "  make deploy-dev     - Deploy to dev environment (AWS)"
+	@echo ""
+	@echo "🧹 Cleanup:"
+	@echo "  make clean          - Remove build artifacts"
+	@echo "  make clean-all      - Remove everything including venv"
 	@echo ""
 	@if [ "$(VENV_EXISTS)" = "0" ]; then \
-		echo "⚠️  Virtual environment not found. Run 'make venv' or 'make install-dev' to create it."; \
+		echo "⚠️  Run 'make install' to set up your environment"; \
 	else \
-		echo "✅ Virtual environment active at: $(VENV_DIR)"; \
+		echo "✅ Environment ready!"; \
 	fi
 
-# Create virtual environment
-venv:
-	@if [ "$(VENV_EXISTS)" = "1" ]; then \
-		echo "✅ Virtual environment already exists at: $(VENV_DIR)"; \
-	else \
-		echo "📦 Creating virtual environment..."; \
-		echo "Detecting Python 3.11+..."; \
+# ============================================================================
+# Installation
+# ============================================================================
+
+install:
+	@echo "📦 Installing all dependencies..."
+	@$(MAKE) _venv
+	@$(MAKE) _install-backend
+	@$(MAKE) _install-frontend
+	@echo ""
+	@echo "✅ All dependencies installed!"
+	@echo ""
+	@echo "🚀 Next steps:"
+	@echo "  1. Run: make db-local-up"
+	@echo "  2. Run: make seed"
+	@echo "  3. Run: make backend (in one terminal)"
+	@echo "  4. Run: make frontend (in another terminal)"
+
+_venv:
+	@if [ "$(VENV_EXISTS)" = "0" ]; then \
+		echo "📦 Creating Python virtual environment..."; \
 		if command -v python3.11 >/dev/null 2>&1; then \
 			PYTHON_CMD=python3.11; \
 		elif command -v python3.12 >/dev/null 2>&1; then \
 			PYTHON_CMD=python3.12; \
-		elif command -v python3.13 >/dev/null 2>&1; then \
-			PYTHON_CMD=python3.13; \
 		elif python3 --version 2>&1 | grep -qE 'Python 3\.(1[1-9]|[2-9][0-9])'; then \
 			PYTHON_CMD=python3; \
 		else \
-			echo "❌ Error: Python 3.11+ is required"; \
-			echo "Found: $$(python3 --version 2>&1)"; \
-			echo ""; \
-			echo "Install Python 3.11+ using one of:"; \
-			echo "  - Homebrew: brew install python@3.11"; \
-			echo "  - pyenv: pyenv install 3.11 && pyenv local 3.11"; \
-			echo "  - Official installer: https://www.python.org/downloads/"; \
+			echo "❌ Python 3.11+ required"; \
 			exit 1; \
 		fi; \
-		echo "Using: $$PYTHON_CMD ($$($$PYTHON_CMD --version))"; \
 		$$PYTHON_CMD -m venv $(VENV_DIR); \
 		$(PIP) install --upgrade pip setuptools wheel; \
-		echo "✅ Virtual environment created at: $(VENV_DIR)"; \
-		echo ""; \
-		echo "To activate manually:"; \
-		echo "  source $(VENV_DIR)/bin/activate"; \
+		echo "✅ Virtual environment created"; \
 	fi
 
-# Install production dependencies
-install: venv
-	@echo "📦 Installing production dependencies..."
-	$(PIP) install -r $(BACKEND_DIR)/requirements-layer.txt
-	@echo "✅ Production dependencies installed"
+_install-backend:
+	@echo "📦 Installing backend dependencies..."
+	@$(PIP) install -r $(BACKEND_DIR)/requirements.txt
+	@echo "✅ Backend dependencies installed"
 
-# Install development dependencies
-install-dev: venv
-	@echo "📦 Installing development dependencies..."
-	$(PIP) install -r $(BACKEND_DIR)/requirements.txt
-	@echo "✅ Development dependencies installed"
-	@echo ""
-	@echo "Virtual environment ready! Makefile will use it automatically."
-	@echo "To activate manually: source $(VENV_DIR)/bin/activate"
+_install-frontend:
+	@echo "📦 Installing frontend dependencies..."
+	@if ! command -v node >/dev/null 2>&1; then \
+		echo "❌ Node.js not installed. Install from https://nodejs.org/"; \
+		exit 1; \
+	fi
+	@cd $(FRONTEND_DIR) && npm install
+	@echo "✅ Frontend dependencies installed"
 
-# Run tests with coverage
+# ============================================================================
+# Testing
+# ============================================================================
+
 test:
-	@if ! $(PYTHON) -m pytest --version >/dev/null 2>&1; then \
-		echo "❌ Error: pytest not installed. Run 'make install-dev' first"; \
-		exit 1; \
-	fi
-	$(PYTHON) -m pytest $(BACKEND_DIR)/tests --ignore=$(BACKEND_DIR)/tests/integration
-
-# Run tests without coverage (faster)
-test-quick:
-	$(PYTHON) -m pytest -v $(BACKEND_DIR)/tests --ignore=$(BACKEND_DIR)/tests/integration
-
-# Run tests with coverage report
-test-cov:
-	@if ! $(PYTHON) -c "import pytest_cov" 2>/dev/null; then \
-		echo "❌ Error: pytest-cov not installed. Run 'make install-dev' first"; \
-		exit 1; \
-	fi
-	$(PYTHON) -m pytest -v --cov=lambda --cov-report=html --cov-report=term-missing $(BACKEND_DIR)/tests --ignore=$(BACKEND_DIR)/tests/integration
+	@echo "🧪 Running all tests (unit + integration)..."
 	@echo ""
-	@echo "📊 Coverage report generated: backend/htmlcov/index.html"
+	@echo "▶ Running unit tests..."
+	@$(PYTHON) -m pytest $(BACKEND_DIR)/tests --ignore=$(BACKEND_DIR)/tests/integration -v
+	@echo ""
+	@echo "▶ Running integration tests..."
+	@$(MAKE) _test-integration
+	@echo ""
+	@echo "✅ All tests passed!"
 
-# Start test database
-docker-test-up:
+_test-integration:
 	@echo "🐳 Starting test database..."
-	docker-compose -f docker-compose.test.yml up -d
-	@echo "⏳ Waiting for database to be ready..."
+	@docker-compose -f docker-compose.test.yml up -d
 	@sleep 5
-	@echo "✅ Test database is ready!"
-	@echo ""
-	@echo "Connection string: postgresql://test:test@localhost:5433/presently_test"
-
-# Stop test database
-docker-test-down:
-	@echo "🛑 Stopping test database..."
-	docker-compose -f docker-compose.test.yml down -v
-	@echo "✅ Test database stopped and data cleaned"
-
-# Run integration tests
-test-integration: docker-test-up
-	@echo "🧪 Running integration tests..."
 	@export TEST_DATABASE_URL='postgresql://test:test@localhost:5433/presently_test' && \
-		$(PYTHON) -m pytest -v $(BACKEND_DIR)/tests/integration
-	@$(MAKE) docker-test-down
+		$(PYTHON) -m pytest $(BACKEND_DIR)/tests/integration -v || \
+		(docker-compose -f docker-compose.test.yml down -v && exit 1)
+	@docker-compose -f docker-compose.test.yml down -v
+	@echo "✅ Integration tests complete"
 
-# Run integration tests with coverage
-test-integration-cov: docker-test-up
-	@echo "🧪 Running integration tests with coverage..."
-	@export TEST_DATABASE_URL='postgresql://test:test@localhost:5433/presently_test' && \
-		$(PYTHON) -m pytest -v --cov=lambda --cov-report=html --cov-report=term-missing $(BACKEND_DIR)/tests/integration
-	@echo ""
-	@echo "📊 Coverage report generated: backend/htmlcov/index.html"
-	@$(MAKE) docker-test-down
+# ============================================================================
+# Linting & Formatting
+# ============================================================================
 
-# Run linter
 lint:
-	$(PYTHON) -m ruff check $(LAMBDA_DIR)
+	@echo "🔍 Linting all code..."
+	@echo ""
+	@echo "▶ Backend (Python):"
+	@$(PYTHON) -m ruff check $(LAMBDA_DIR)
+	@echo ""
+	@echo "▶ Frontend (TypeScript):"
+	@cd $(FRONTEND_DIR) && npm run lint
+	@echo ""
+	@echo "✅ Linting complete!"
 
-# Format code
 format:
-	$(PYTHON) -m ruff format $(LAMBDA_DIR)
-	$(PYTHON) -m ruff check --fix $(LAMBDA_DIR)
-
-# Type checking
-check:
-	$(PYTHON) -m mypy $(LAMBDA_DIR)
-
-# Clean build artifacts
-clean:
-	@echo "🧹 Cleaning build artifacts..."
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name ".coverage" -delete 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	rm -rf $(BACKEND_DIR)/.aws-sam 2>/dev/null || true
-	@echo "✅ Build artifacts cleaned"
-
-# Clean everything including virtual environment
-clean-all: clean
-	@echo "🧹 Removing virtual environment..."
-	rm -rf $(VENV_DIR)
-	@echo "✅ Everything cleaned"
-
-# Deploy infrastructure (Cognito + S3)
-deploy-infra:
-	@echo "Deploying infrastructure..."
-	@if [ -z "$(ENV)" ]; then \
-		echo "Error: ENV variable is required. Usage: make deploy-infra ENV=prod"; \
-		exit 1; \
-	fi
-	cd $(INFRA_DIR) && ./scripts/deploy-infra.sh $(ENV)
-
-# Deploy Lambda functions
-deploy-lambda:
-	@echo "Deploying Lambda functions..."
-	@if [ -z "$(ENV)" ]; then \
-		echo "Error: ENV variable is required. Usage: make deploy-lambda ENV=prod"; \
-		exit 1; \
-	fi
-	cd $(INFRA_DIR) && ./scripts/deploy-lambda.sh $(ENV)
-
-# Configure Cognito Lambda triggers
-configure-cognito-triggers:
-	@echo "Configuring Cognito Lambda triggers..."
-	@if [ -z "$(ENV)" ]; then \
-		echo "Error: ENV variable is required. Usage: make configure-cognito-triggers ENV=prod"; \
-		exit 1; \
-	fi
-	cd $(INFRA_DIR) && ./scripts/configure-cognito-triggers.sh $(ENV)
-
-# Deploy everything
-deploy:
-	@if [ -z "$(ENV)" ]; then \
-		echo "❌ Error: ENV variable is required. Usage: make deploy ENV=prod"; \
-		exit 1; \
-	fi
-	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "❌ Error: DATABASE_URL not set in .env.development"; \
-		echo "   Copy .env.example to .env.development and fill in your values"; \
-		exit 1; \
-	fi
-	@echo "🚀 Starting full deployment for environment: $(ENV)"
+	@echo "✨ Formatting all code..."
 	@echo ""
-	$(MAKE) deploy-infra ENV=$(ENV)
+	@echo "▶ Backend (Python):"
+	@$(PYTHON) -m ruff format $(LAMBDA_DIR)
+	@$(PYTHON) -m ruff check --fix $(LAMBDA_DIR)
 	@echo ""
-	$(MAKE) deploy-lambda ENV=$(ENV)
+	@echo "▶ Frontend (TypeScript):"
+	@cd $(FRONTEND_DIR) && npm run lint --fix 2>/dev/null || echo "Note: Next.js lint auto-fix may not be available"
 	@echo ""
-	$(MAKE) configure-cognito-triggers ENV=$(ENV)
-	@echo ""
-	@echo "✅ Deployment complete!"
-	@echo ""
-	@echo "📋 Your API is ready at:"
-	@aws cloudformation describe-stacks \
-		--stack-name presently-lambda-$(ENV) \
-		--region us-east-1 \
-		--query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
-		--output text 2>/dev/null || echo "Use the URL from deploy-lambda output above"
+	@echo "✅ Formatting complete!"
 
-# Run database migrations
-db-migrate:
-	@echo "🗃️  Running database migrations..."
-	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "❌ Error: DATABASE_URL not set in .env.development"; \
-		echo "   Copy .env.example to .env.development and fill in your values"; \
-		exit 1; \
-	fi
-	psql "$(DATABASE_URL)" -f $(BACKEND_DIR)/migrations/schema.sql
-	@echo "✅ Database migrations complete!"
+# ============================================================================
+# Local Development
+# ============================================================================
 
-# Open database shell
-db-shell:
-	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "❌ Error: DATABASE_URL not set in .env.development"; \
-		echo "   Copy .env.example to .env.development and fill in your values"; \
-		exit 1; \
-	fi
-	psql "$(DATABASE_URL)"
-
-# Pre-commit checks (run before committing)
-pre-commit: format lint test
-	@echo "✅ All pre-commit checks passed!"
-
-# Frontend commands
 frontend:
 	@echo "🚀 Starting frontend development server..."
 	@if [ ! -d "$(FRONTEND_DIR)/node_modules" ]; then \
-		echo "📦 node_modules not found. Run 'make frontend-install' first"; \
+		echo "❌ Frontend dependencies not installed. Run 'make install' first"; \
 		exit 1; \
 	fi
-	cd $(FRONTEND_DIR) && npm run dev
+	@echo ""
+	@echo "Frontend will be available at: http://localhost:3000"
+	@echo "API endpoint: http://localhost:8000 (make sure backend is running)"
+	@echo ""
+	@cd $(FRONTEND_DIR) && NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
 
-frontend-install:
-	@echo "📦 Installing frontend dependencies..."
-	@if ! command -v node >/dev/null 2>&1; then \
-		echo "❌ Error: Node.js is not installed"; \
-		echo ""; \
-		echo "Install Node.js using one of:"; \
-		echo "  - nvm (recommended): curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"; \
-		echo "    Then run: nvm install 20 && nvm use 20"; \
-		echo "  - Homebrew: brew install node"; \
-		echo "  - Official installer: https://nodejs.org/"; \
+backend:
+	@echo "🚀 Starting backend development server..."
+	@if [ "$(VENV_EXISTS)" = "0" ]; then \
+		echo "❌ Backend dependencies not installed. Run 'make install' first"; \
 		exit 1; \
 	fi
-	cd $(FRONTEND_DIR) && npm install
-	@echo "✅ Frontend dependencies installed"
+	@echo ""
+	@echo "Backend API will be available at: http://localhost:8000"
+	@echo "API Documentation: http://localhost:8000/docs"
+	@echo "Database: localhost:5433/presently_local"
+	@echo "Environment: local"
+	@echo ""
+	@cd $(LAMBDA_DIR) && \
+		DATABASE_URL=postgresql://presently:presently_local@localhost:5433/presently_local \
+		ENVIRONMENT=local \
+		$(PYTHON) main.py
 
-frontend-build:
-	@echo "🏗️  Building frontend for production..."
-	cd $(FRONTEND_DIR) && npm run build
-	@echo "✅ Frontend build complete"
+# ============================================================================
+# Database Management
+# ============================================================================
 
-frontend-lint:
-	@echo "🔍 Linting frontend code..."
-	cd $(FRONTEND_DIR) && npm run lint
+db-local-up:
+	@echo "🐳 Starting local Postgres database..."
+	@docker-compose -f docker-compose.local.yml up -d
+	@echo "⏳ Waiting for database to be ready..."
+	@sleep 5
+	@echo "✅ Local database is ready!"
+	@echo ""
+	@echo "📋 Connection details:"
+	@echo "   Host: localhost"
+	@echo "   Port: 5433"
+	@echo "   Database: presently_local"
+	@echo "   User: presently"
+	@echo "   Password: presently_local"
+	@echo ""
+	@echo "Connection string:"
+	@echo "   postgresql://presently:presently_local@localhost:5433/presently_local"
+	@echo ""
+	@echo "💡 Next: Run 'make seed' to add test data"
 
-frontend-type-check:
-	@echo "🔍 Type checking frontend code..."
-	cd $(FRONTEND_DIR) && npm run type-check
+db-local-down:
+	@echo "🛑 Stopping local database..."
+	@docker-compose -f docker-compose.local.yml down
+	@echo "✅ Local database stopped"
+	@echo ""
+	@echo "💡 Data is persisted. Run 'docker-compose -f docker-compose.local.yml down -v' to delete data"
+
+seed:
+	@echo "🌱 Seeding local database with test data..."
+	@DATABASE_URL=postgresql://presently:presently_local@localhost:5433/presently_local \
+		$(PYTHON) $(BACKEND_DIR)/scripts/seed_local.py
+
+db-migrate:
+	@echo "🗃️  Running database migrations on dev environment..."
+	@if [ ! -f ".env.development" ]; then \
+		echo "❌ .env.development not found"; \
+		echo "   Copy .env.example to .env.development and configure"; \
+		exit 1; \
+	fi
+	@. .env.development && psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
+	@echo "✅ Migrations complete!"
+
+# ============================================================================
+# Deployment
+# ============================================================================
+
+deploy-dev:
+	@echo "🚀 Deploying to dev environment..."
+	@if [ ! -f ".env.development" ]; then \
+		echo "❌ .env.development not found"; \
+		echo "   Copy .env.example to .env.development and configure"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "📄 Loading environment variables..."
+	@export $$(cat .env.development | grep -v '^#' | xargs) && \
+	if [ -z "$$DATABASE_URL" ]; then \
+		echo "❌ DATABASE_URL not set in .env.development"; \
+		exit 1; \
+	fi && \
+	if [ -z "$$SENDER_EMAIL" ]; then \
+		echo "❌ SENDER_EMAIL not set in .env.development"; \
+		exit 1; \
+	fi && \
+	FRONTEND_URL=$${FRONTEND_URL:-https://presently-nu.vercel.app} && \
+	echo "✅ Environment variables loaded" && \
+	echo "" && \
+	echo "📦 Building SAM application..." && \
+	cd $(LAMBDA_DIR) && sam build && \
+	echo "" && \
+	echo "🚀 Deploying to AWS..." && \
+	sam deploy \
+		--stack-name presently-lambda-dev \
+		--region us-east-1 \
+		--parameter-overrides \
+			Environment=dev \
+			NeonDatabaseURL="$$DATABASE_URL" \
+			SenderEmail="$$SENDER_EMAIL" \
+			FrontendURL="$$FRONTEND_URL" \
+		--capabilities CAPABILITY_IAM \
+		--resolve-s3 \
+		--no-fail-on-empty-changeset && \
+	echo "" && \
+	echo "✅ Deployment complete!" && \
+	echo "" && \
+	echo "📋 API Gateway URL:" && \
+	aws cloudformation describe-stacks \
+		--stack-name presently-lambda-dev \
+		--region us-east-1 \
+		--query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+		--output text && \
+	echo "" && \
+	echo "💡 Next steps:" && \
+	echo "  1. Update NEXT_PUBLIC_API_URL in frontend/.env.local with the URL above" && \
+	echo "  2. Deploy frontend to Vercel"
+
+# ============================================================================
+# Cleanup
+# ============================================================================
+
+clean:
+	@echo "🧹 Cleaning build artifacts..."
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name ".coverage" -delete 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@rm -rf $(BACKEND_DIR)/.aws-sam 2>/dev/null || true
+	@rm -rf $(FRONTEND_DIR)/.next 2>/dev/null || true
+	@echo "✅ Build artifacts cleaned"
+
+clean-all: clean
+	@echo "🧹 Removing virtual environment..."
+	@rm -rf $(VENV_DIR)
+	@echo "🧹 Removing node_modules..."
+	@rm -rf $(FRONTEND_DIR)/node_modules
+	@echo "✅ Everything cleaned"

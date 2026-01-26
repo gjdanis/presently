@@ -3,7 +3,16 @@
     "allow": [
       "Bash(aws logs tail:*)",
       "Read(//Users/joe/Documents/presently-old/**)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Read(//tmp/**)",
+      "Bash(aws apigatewayv2 get-deployment:*)",
+      "Bash(aws apigatewayv2 get-routes:*)",
+      "Bash(aws cloudformation wait:*)",
+      "Bash(make deploy-dev:*)",
+      "Bash(export API_URL=\"https://a5rucpyze9.execute-api.us-east-1.amazonaws.com\")",
+      "Bash(./test-api.sh:*)",
+      "Bash(./create-test-user.sh:*)"
     ],
     "deny": [],
     "ask": []
