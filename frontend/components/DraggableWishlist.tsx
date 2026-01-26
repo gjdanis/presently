@@ -24,7 +24,13 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-function SortableItem({ item }: { item: WishlistItem }) {
+function SortableItem({
+  item,
+  onDelete
+}: {
+  item: WishlistItem
+  onDelete: (itemId: string) => void
+}) {
   const {
     attributes,
     listeners,
@@ -110,7 +116,10 @@ function SortableItem({ item }: { item: WishlistItem }) {
         </Link>
 
         <div className="flex-shrink-0">
-          <DeleteItemButton itemId={item.id} />
+          <DeleteItemButton
+            itemId={item.id}
+            onDelete={() => onDelete(item.id)}
+          />
         </div>
       </div>
     </div>
@@ -133,6 +142,11 @@ export function DraggableWishlist({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
+
+  function handleDelete(itemId: string) {
+    // Immediately update local state to remove the item
+    setItems((prevItems) => prevItems.filter((item) => item.id !== itemId))
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -175,7 +189,7 @@ export function DraggableWishlist({
       <SortableContext items={items} strategy={verticalListSortingStrategy}>
         <div className="space-y-4">
           {items.map((item) => (
-            <SortableItem key={item.id} item={item} />
+            <SortableItem key={item.id} item={item} onDelete={handleDelete} />
           ))}
         </div>
       </SortableContext>

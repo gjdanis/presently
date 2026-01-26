@@ -4,7 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 
-export function DeleteItemButton({ itemId }: { itemId: string }) {
+export function DeleteItemButton({
+  itemId,
+  onDelete
+}: {
+  itemId: string
+  onDelete?: () => void
+}) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
 
@@ -16,6 +22,9 @@ export function DeleteItemButton({ itemId }: { itemId: string }) {
     setDeleting(true)
     try {
       await api.deleteItem(itemId)
+      if (onDelete) {
+        onDelete()
+      }
       router.refresh()
     } catch (error) {
       console.error('Error deleting item:', error)

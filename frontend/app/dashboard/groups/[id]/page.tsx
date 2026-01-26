@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { DashboardNav } from '@/components/DashboardNav'
+import { PurchaseButton } from '@/components/PurchaseButton'
 import { api } from '@/lib/api'
 import type { GroupDetail } from '@/lib/types'
 
@@ -139,8 +140,32 @@ export default function GroupDetailPage() {
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                           {userWishlist.items.map((item: any) => {
                             const photoUrl = item.photoUrl || item.photo_url
+                            const itemOwnerId = item.userId || item.user_id
+                            const isOwnItem = itemOwnerId === profile.id
+
+                            // Purchase status (only visible to non-owners)
+                            const isPurchased = item.is_purchased || item.isPurchased || false
+                            const purchasedById = item.purchased_by || item.purchasedBy
+                            const purchasedByMe = !isOwnItem && purchasedById === profile.id
+
+                            // Find purchaser's name if item is purchased
+                            let purchasedByName: string | undefined
+                            if (isPurchased && !isOwnItem && purchasedById) {
+                              const purchaser = groupData.members.find((m: any) =>
+                                (m.userId || m.user_id) === purchasedById
+                              )
+                              purchasedByName = purchaser?.name
+                            }
+
                             return (
-                              <div key={item.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                              <div
+                                key={item.id}
+                                className={`border rounded-lg p-4 flex flex-col transition-colors duration-200 ${
+                                  purchasedByMe
+                                    ? 'border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                                    : 'border-gray-200 dark:border-gray-700'
+                                }`}
+                              >
                                 {photoUrl && (
                                   <img
                                     src={photoUrl}
@@ -164,10 +189,27 @@ export default function GroupDetailPage() {
                                     href={item.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline block mb-3"
                                   >
                                     View Product →
                                   </a>
+                                )}
+
+                                {/* Only show purchase button if not the item owner */}
+                                {!isOwnItem && (
+                                  <div className="mt-auto pt-3">
+                                    <PurchaseButton
+                                      itemId={item.id}
+                                      groupId={groupId}
+                                      isPurchased={isPurchased}
+                                      purchasedByMe={purchasedByMe}
+                                      purchasedByName={purchasedByName}
+                                      onClaimChange={(claimed) => {
+                                        // Optionally refresh the group data
+                                        // For now, the PurchaseButton handles its own state
+                                      }}
+                                    />
+                                  </div>
                                 )}
                               </div>
                             )
