@@ -9,7 +9,8 @@
       "Bash(find:*)",
       "Bash(aws cloudformation:*)",
       "Bash(aws logs describe-log-groups:*)",
-      "Bash(aws apigateway get-rest-api:*)"
+      "Bash(aws apigateway get-rest-api:*)",
+      "Bash(./deploy-lambda.sh:*)"
     ],
     "deny": [],
     "ask": []

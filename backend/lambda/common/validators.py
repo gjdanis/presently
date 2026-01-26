@@ -6,7 +6,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, ValidationError
 
+from .logger import setup_logger
 from .responses import error
+
+logger = setup_logger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -39,9 +42,11 @@ def validate_request_body(event: dict[str, Any], model: Type[T]) -> tuple[T | No
         validated = model(**body_dict)
         return validated, None
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error: {str(e)}")
         return None, error("Invalid JSON in request body", 400)
     except ValidationError as e:
+        logger.error(f"Validation error: {e.errors()}")
         return None, error("Validation error", 400, details=e.errors())
 
 

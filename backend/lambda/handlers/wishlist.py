@@ -6,6 +6,7 @@ from typing import Any
 from common.auth import require_auth
 from common.db import execute_delete, execute_insert, execute_query, execute_update
 from common.decorators import handle_cors
+from common.logger import setup_logger
 from common.models import (
     GroupInfo,
     WishlistItemCreate,
@@ -14,6 +15,8 @@ from common.models import (
 )
 from common.responses import created, error, forbidden, no_content, not_found, success
 from common.validators import get_path_parameter, validate_request_body
+
+logger = setup_logger(__name__)
 
 
 @handle_cors("GET,POST,PUT,DELETE,OPTIONS")
@@ -87,15 +90,22 @@ def get_wishlist(user_id: str) -> dict[str, Any]:
 
 def create_wishlist_item(event: dict[str, Any], user_id: str) -> dict[str, Any]:
     """Create a new wishlist item."""
+    # Log incoming request for debugging
+    logger.info(f"Creating wishlist item for user {user_id}")
+    logger.debug(f"Request body: {event.get('body')}")
+
     # Validate request body
     item_data, validation_error = validate_request_body(event, WishlistItemCreate)
     if validation_error:
+        logger.error(f"Validation failed: {validation_error}")
         return validation_error
 
-    # Verify user is member of all specified groups
-    for group_id in item_data.group_ids:
-        if not _is_group_member(user_id, str(group_id)):
-            return forbidden(f"You are not a member of group {group_id}")
+    # Verify user is member of all specified groups (if any)
+    if item_data.group_ids:
+        for group_id in item_data.group_ids:
+            if not _is_group_member(user_id, str(group_id)):
+                logger.warning(f"User {user_id} not member of group {group_id}")
+                return forbidden(f"You are not a member of group {group_id}")
 
     # Insert wishlist item
     item_query = """

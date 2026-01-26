@@ -115,7 +115,7 @@ class WishlistItemBase(BaseModel):
 class WishlistItemCreate(WishlistItemBase):
     """Wishlist item creation request."""
 
-    group_ids: list[UUID] = Field(..., min_length=1)
+    group_ids: list[UUID] = Field(default_factory=list)
     rank: int = Field(default=0, ge=0)
 
 

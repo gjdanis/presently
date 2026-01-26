@@ -49,6 +49,7 @@ export default function NewWishlistItemPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
     setLoading(true)
 
     try {
@@ -63,9 +64,10 @@ export default function NewWishlistItemPage() {
       })
 
       router.push('/dashboard/wishlists')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating item:', error)
-      alert('Failed to create item')
+      const message = error?.response?.data?.error || 'Failed to create item'
+      alert(message)
       setLoading(false)
     }
   }
@@ -158,29 +160,36 @@ export default function NewWishlistItemPage() {
 
           <div>
             <label className="block text-sm font-medium mb-3 text-gray-900 dark:text-gray-100">
-              Share with Groups
+              Share with Groups (optional)
             </label>
             {groups.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                You're not a member of any groups yet. Items will only be visible to you.
+                You're not a member of any groups yet. This item will be private until you share it.
               </p>
             ) : (
-              <div className="space-y-2">
-                {groups.map((group) => (
-                  <label
-                    key={group.id}
-                    className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedGroups.includes(group.id)}
-                      onChange={() => toggleGroup(group.id)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="ml-3 text-gray-900 dark:text-gray-100">{group.name}</span>
-                  </label>
-                ))}
-              </div>
+              <>
+                <div className="space-y-2">
+                  {groups.map((group) => (
+                    <label
+                      key={group.id}
+                      className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedGroups.includes(group.id)}
+                        onChange={() => toggleGroup(group.id)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="ml-3 text-gray-900 dark:text-gray-100">{group.name}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedGroups.length === 0 && (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
+                    No groups selected - this item will be private until you share it with a group
+                  </p>
+                )}
+              </>
             )}
           </div>
 
