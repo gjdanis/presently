@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Presently Infrastructure - Cognito + S3 (Using Neon for Database)
+Transform: AWS::Serverless-2016-10-31
+Description: Presently - Complete Infrastructure (Cognito, S3, Lambda, API Gateway)
 
 Parameters:
   Environment:
@@ -10,20 +11,25 @@ Parameters:
       - prod
     Description: Environment name (dev or prod)
 
-  PostConfirmationLambdaArn:
+  NeonDatabaseURL:
     Type: String
-    Default: ""
-    Description: ARN of Post-Confirmation Lambda function (optional, set after Lambda deployment)
+    Description: Neon Postgres connection string
+    NoEcho: true
 
-  PreSignUpLambdaArn:
+  SenderEmail:
     Type: String
+    Description: Email address to send invitations from (must be verified in SES)
     Default: ""
-    Description: ARN of Pre-SignUp Lambda function (optional, set after Lambda deployment)
 
-Conditions:
-  HasPostConfirmationLambda: !Not [!Equals [!Ref PostConfirmationLambdaArn, ""]]
-  HasPreSignUpLambda: !Not [!Equals [!Ref PreSignUpLambdaArn, ""]]
-  HasLambdaTriggers: !Or [!Condition HasPostConfirmationLambda, !Condition HasPreSignUpLambda]
+  FrontendURL:
+    Type: String
+    Description: Frontend URL for invitation links
+    Default: "https://presently-nu.vercel.app"
+
+  LambdaCodeUri:
+    Type: String
+    Description: Path to Lambda code directory
+    Default: "../backend/lambda"
 
 Resources:
   # ============================================================================
@@ -58,8 +64,8 @@ Resources:
         AttributesRequireVerificationBeforeUpdate:
           - email
       LambdaConfig:
-        PostConfirmation: !If [HasPostConfirmationLambda, !Ref PostConfirmationLambdaArn, !Ref "AWS::NoValue"]
-        PreSignUp: !If [HasPreSignUpLambda, !Ref PreSignUpLambdaArn, !Ref "AWS::NoValue"]
+        PostConfirmation: !GetAtt CognitoPostConfirmationFunction.Arn
+        PreSignUp: !GetAtt CognitoPreSignupFunction.Arn
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -215,11 +221,128 @@ Resources:
                   - ses:SendRawEmail
                 Resource: '*'
 
+  # ============================================================================
+  # HTTP API Gateway
+  # ============================================================================
+
+  PresentlyHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'  # TODO: Restrict to your domain in production
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - '*'
+        AllowCredentials: false
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              Audience:
+                - !Ref UserPoolClient
+              Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+
+  # ============================================================================
+  # Main FastAPI Lambda Function
+  # ============================================================================
+
+  PresentlyApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub presently-api-${Environment}
+      CodeUri: !Ref LambdaCodeUri
+      Handler: main.handler  # Mangum handler
+      Runtime: python3.12
+      Timeout: 30
+      MemorySize: 512
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref NeonDatabaseURL
+          PHOTOS_BUCKET: !Ref PhotosBucket
+          PHOTOS_CDN: !GetAtt PhotosCDN.DomainName
+          COGNITO_USER_POOL_ID: !Ref UserPool
+          COGNITO_CLIENT_ID: !Ref UserPoolClient
+          ENVIRONMENT: !Ref Environment
+          SENDER_EMAIL: !Ref SenderEmail
+          FRONTEND_URL: !Ref FrontendURL
+      Events:
+        # Catch-all proxy route for FastAPI (handles all paths including /)
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PresentlyHttpApi
+            Path: /{proxy+}
+            Method: ANY
+        # Root path needs separate event
+        RootApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PresentlyHttpApi
+            Path: /
+            Method: ANY
+    Metadata:
+      BuildMethod: python3.12
+
+  # ============================================================================
+  # Cognito Trigger Functions
+  # ============================================================================
+
+  CognitoPreSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub presently-cognito-pre-signup-${Environment}
+      CodeUri: !Ref LambdaCodeUri
+      Handler: handlers.cognito_triggers.pre_signup_handler
+      Runtime: python3.12
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref NeonDatabaseURL
+
+  CognitoPostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub presently-cognito-post-confirmation-${Environment}
+      CodeUri: !Ref LambdaCodeUri
+      Handler: handlers.cognito_triggers.post_confirmation_handler
+      Runtime: python3.12
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref NeonDatabaseURL
+
+  # Lambda permissions for Cognito to invoke trigger functions
+  PreSignupLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CognitoPreSignupFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  PostConfirmationLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CognitoPostConfirmationFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
 # ============================================================================
 # Outputs
 # ============================================================================
 
 Outputs:
+  # Cognito
   UserPoolId:
     Description: Cognito User Pool ID
     Value: !Ref UserPool
@@ -238,6 +361,7 @@ Outputs:
     Export:
       Name: !Sub ${Environment}-UserPoolArn
 
+  # S3 & CloudFront
   PhotosBucketName:
     Description: S3 Bucket for Photos
     Value: !Ref PhotosBucket
@@ -250,12 +374,46 @@ Outputs:
     Export:
       Name: !Sub ${Environment}-PhotosCDN
 
+  # IAM
   LambdaRoleArn:
     Description: Lambda Execution Role ARN
     Value: !GetAtt LambdaExecutionRole.Arn
     Export:
       Name: !Sub ${Environment}-LambdaRole
 
+  # API Gateway
+  ApiUrl:
+    Description: API Gateway URL
+    Value: !Sub 'https://${PresentlyHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Export:
+      Name: !Sub ${Environment}-ApiUrl
+
+  ApiId:
+    Description: API Gateway ID
+    Value: !Ref PresentlyHttpApi
+    Export:
+      Name: !Sub ${Environment}-ApiId
+
+  # Lambda Functions
+  FunctionArn:
+    Description: FastAPI Lambda Function ARN
+    Value: !GetAtt PresentlyApiFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-FunctionArn
+
+  PreSignupFunctionArn:
+    Description: Pre-signup trigger function ARN
+    Value: !GetAtt CognitoPreSignupFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-PreSignupFunctionArn
+
+  PostConfirmationFunctionArn:
+    Description: Post-confirmation trigger function ARN
+    Value: !GetAtt CognitoPostConfirmationFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-PostConfirmationFunctionArn
+
+  # General
   Region:
     Description: AWS Region
     Value: !Ref AWS::Region

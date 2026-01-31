@@ -160,11 +160,16 @@ frontend:
 		echo "❌ Frontend dependencies not installed. Run 'make install' first"; \
 		exit 1; \
 	fi
+	@if [ ! -f ".env.local" ]; then \
+		echo "❌ .env.local not found"; \
+		echo "   Copy .env.local.example to .env.local and configure"; \
+		exit 1; \
+	fi
 	@echo ""
 	@echo "Frontend will be available at: http://localhost:3000"
-	@echo "API endpoint: http://localhost:8000 (make sure backend is running)"
+	@echo "Loading environment from .env.local"
 	@echo ""
-	@cd $(FRONTEND_DIR) && NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
+	@cd $(FRONTEND_DIR) && set -a && . ../.env.local && set +a && npm run dev
 
 backend:
 	@echo "🚀 Starting backend development server..."
@@ -172,18 +177,18 @@ backend:
 		echo "❌ Backend dependencies not installed. Run 'make install' first"; \
 		exit 1; \
 	fi
+	@if [ ! -f ".env.local" ]; then \
+		echo "❌ .env.local not found"; \
+		echo "   Copy .env.local.example to .env.local and configure"; \
+		exit 1; \
+	fi
 	@echo ""
 	@echo "Backend API will be available at: http://localhost:8000"
 	@echo "API Documentation: http://localhost:8000/docs"
-	@echo "Database: localhost:5433/presently_local"
-	@echo "Environment: local"
+	@echo "Loading environment from .env.local"
 	@echo ""
-	@cd $(LAMBDA_DIR) && \
-		DATABASE_URL=postgresql://presently:presently_local@localhost:5433/presently_local \
-		ENVIRONMENT=local \
-		PHOTOS_BUCKET=presently-photos-dev-us-east-1-479453697367 \
-		AWS_REGION=us-east-1 \
-		$(PYTHON) main.py
+	@export $$(cat .env.local | grep -v '^#' | grep -v '^$$' | xargs) && \
+		cd $(LAMBDA_DIR) && $(PYTHON) main.py
 
 # ============================================================================
 # Database Management
@@ -222,12 +227,13 @@ seed:
 
 db-migrate:
 	@echo "🗃️  Running database migrations on dev environment..."
-	@if [ ! -f ".env.development" ]; then \
-		echo "❌ .env.development not found"; \
-		echo "   Copy .env.example to .env.development and configure"; \
+	@if [ ! -f ".env.local" ]; then \
+		echo "❌ .env.local not found"; \
+		echo "   Copy .env.local.example to .env.local and configure"; \
 		exit 1; \
 	fi
-	@. .env.development && psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
+	@export $$(cat .env.local | grep -v '^#' | grep -v '^$$' | xargs) && \
+		psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
 	@echo "✅ Migrations complete!"
 
 # ============================================================================
@@ -236,38 +242,39 @@ db-migrate:
 
 deploy-dev:
 	@echo "🚀 Deploying to dev environment..."
-	@if [ ! -f ".env.development" ]; then \
-		echo "❌ .env.development not found"; \
-		echo "   Copy .env.example to .env.development and configure"; \
+	@if [ ! -f ".env.local" ]; then \
+		echo "❌ .env.local not found"; \
+		echo "   Copy .env.local.example to .env.local and configure"; \
 		exit 1; \
 	fi
 	@echo ""
-	@echo "📄 Loading environment variables..."
-	@export $$(cat .env.development | grep -v '^#' | xargs) && \
+	@echo "📄 Loading environment variables from .env.local..."
+	@export $$(cat .env.local | grep -v '^#' | grep -v '^$$' | xargs) && \
 	if [ -z "$$DATABASE_URL" ]; then \
-		echo "❌ DATABASE_URL not set in .env.development"; \
+		echo "❌ DATABASE_URL not set in .env.local"; \
 		exit 1; \
 	fi && \
 	if [ -z "$$SENDER_EMAIL" ]; then \
-		echo "❌ SENDER_EMAIL not set in .env.development"; \
+		echo "❌ SENDER_EMAIL not set in .env.local"; \
 		exit 1; \
 	fi && \
 	FRONTEND_URL=$${FRONTEND_URL:-https://presently-nu.vercel.app} && \
 	echo "✅ Environment variables loaded" && \
 	echo "" && \
 	echo "📦 Building SAM application..." && \
-	cd $(LAMBDA_DIR) && sam build && \
+	cd infrastructure && sam build && \
 	echo "" && \
 	echo "🚀 Deploying to AWS..." && \
 	sam deploy \
-		--stack-name presently-lambda-dev \
+		--template-file .aws-sam/build/template.yaml \
+		--stack-name presently-dev \
 		--region us-east-1 \
 		--parameter-overrides \
 			Environment=dev \
 			NeonDatabaseURL="$$DATABASE_URL" \
 			SenderEmail="$$SENDER_EMAIL" \
 			FrontendURL="$$FRONTEND_URL" \
-		--capabilities CAPABILITY_IAM \
+		--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
 		--resolve-s3 \
 		--no-fail-on-empty-changeset && \
 	echo "" && \
@@ -275,13 +282,13 @@ deploy-dev:
 	echo "" && \
 	echo "📋 API Gateway URL:" && \
 	aws cloudformation describe-stacks \
-		--stack-name presently-lambda-dev \
+		--stack-name presently-dev \
 		--region us-east-1 \
 		--query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
 		--output text && \
 	echo "" && \
 	echo "💡 Next steps:" && \
-	echo "  1. Update NEXT_PUBLIC_API_URL in frontend/.env.local with the URL above" && \
+	echo "  1. Update NEXT_PUBLIC_API_URL in .env.local with the URL above" && \
 	echo "  2. Deploy frontend to Vercel"
 
 # ============================================================================
