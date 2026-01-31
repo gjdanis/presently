@@ -1,11 +1,21 @@
 """Groups management FastAPI router."""
 
-from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 
 from common.db import execute_delete, execute_insert, execute_query, execute_update
 from common.logger import setup_logger
-from common.models import AuthenticatedUser, GroupCreate, GroupMemberResponse, GroupResponse, GroupUpdate
+from common.models import (
+    AuthenticatedUser,
+    GroupBasicInfo,
+    GroupCreate,
+    GroupDetailResponse,
+    GroupMemberResponse,
+    GroupResponse,
+    GroupsListResponse,
+    GroupUpdate,
+    WishlistItemInGroup,
+    WishlistUserGroup,
+)
 from common.s3_utils import s3_uri_to_presigned_url
 from dependencies.auth import get_current_user
 
@@ -14,10 +24,10 @@ logger = setup_logger(__name__)
 router = APIRouter()
 
 
-@router.get("", response_model=dict[str, list[GroupResponse]])
+@router.get("", response_model=GroupsListResponse)
 async def get_groups(
     current_user: AuthenticatedUser = Depends(get_current_user),
-) -> dict[str, list[GroupResponse]]:
+) -> GroupsListResponse:
     """Get all groups for the authenticated user."""
     user_id = str(current_user.sub)
 
@@ -35,7 +45,7 @@ async def get_groups(
     results = execute_query(query, (user_id,))
     groups = [GroupResponse(**row) for row in results]
 
-    return {"groups": groups}
+    return GroupsListResponse(groups=groups)
 
 
 @router.post("", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
@@ -78,11 +88,11 @@ async def create_group(
     return GroupResponse(**response_data)
 
 
-@router.get("/{group_id}")
+@router.get("/{group_id}", response_model=GroupDetailResponse)
 async def get_group_detail(
     group_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
-) -> dict[str, Any]:
+) -> GroupDetailResponse:
     """Get detailed group information including members and wishlists."""
     user_id = str(current_user.sub)
 
@@ -144,7 +154,7 @@ async def get_group_detail(
     wishlist_results = execute_query(wishlists_query, (group_id, group_id))
 
     # Group wishlists by user
-    wishlists_by_user: dict[str, list[dict[str, Any]]] = {}
+    wishlists_by_user: dict[str, list[dict]] = {}
 
     for item in wishlist_results:
         owner_id = str(item["user_id"])
@@ -168,15 +178,19 @@ async def get_group_detail(
 
     # Format wishlists response
     wishlists = [
-        {
-            "userId": str(member.user_id),
-            "userName": member.name,
-            "items": wishlists_by_user.get(str(member.user_id), []),
-        }
+        WishlistUserGroup(
+            userId=str(member.user_id),
+            userName=member.name,
+            items=[WishlistItemInGroup(**item) for item in wishlists_by_user.get(str(member.user_id), [])],
+        )
         for member in members
     ]
 
-    return {"group": group, "members": members, "wishlists": wishlists}
+    return GroupDetailResponse(
+        group=GroupBasicInfo(**group),
+        members=members,
+        wishlists=wishlists
+    )
 
 
 @router.put("/{group_id}")
@@ -184,7 +198,7 @@ async def update_group(
     group_id: str,
     update_data: GroupUpdate,
     current_user: AuthenticatedUser = Depends(get_current_user),
-) -> dict[str, Any]:
+) -> dict:
     """Update group details (admin only)."""
     user_id = str(current_user.sub)
 
@@ -197,7 +211,7 @@ async def update_group(
 
     # Build dynamic UPDATE query
     updates = []
-    params: list[Any] = []
+    params: list = []
 
     if update_data.name is not None:
         updates.append("name = %s")

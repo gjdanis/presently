@@ -89,12 +89,54 @@ class GroupResponse(GroupBase):
     updated_at: datetime
 
 
-class GroupDetailResponse(GroupBase):
-    """Detailed group response with members."""
+class GroupsListResponse(BaseModel):
+    """Response for GET /groups endpoint."""
+
+    groups: list[GroupResponse]
+
+
+class GroupBasicInfo(GroupBase):
+    """Basic group information for detail view."""
 
     id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class WishlistItemInGroup(BaseModel):
+    """Wishlist item as shown in group view."""
+
+    id: UUID
+    user_id: UUID
+    name: str
+    description: Optional[str]
+    url: Optional[str]
+    price: Optional[Decimal]
+    photo_url: Optional[str]  # S3 URI (converted to presigned URL)
+    rank: int
+    created_at: datetime
+    updated_at: datetime
+    owner_name: str
+    owner_email: str
+    is_purchased: Optional[bool]  # Hidden from owner
+    purchased_by: Optional[UUID]  # Hidden from owner
+    purchased_at: Optional[datetime]
+
+
+class WishlistUserGroup(BaseModel):
+    """Wishlist items grouped by user."""
+
+    userId: str
+    userName: str
+    items: list[WishlistItemInGroup]
+
+
+class GroupDetailResponse(BaseModel):
+    """Detailed group response with members and wishlists."""
+
+    group: GroupBasicInfo
+    members: list[GroupMemberResponse]
+    wishlists: list[WishlistUserGroup]
 
 
 # ============================================================================
