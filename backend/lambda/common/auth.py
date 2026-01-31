@@ -26,9 +26,7 @@ def get_cognito_public_keys() -> dict[str, Any]:
     if not user_pool_id:
         raise ValueError("COGNITO_USER_POOL_ID environment variable is not set")
 
-    keys_url = (
-        f"https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
-    )
+    keys_url = f"https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
 
     response = requests.get(keys_url, timeout=10)
     response.raise_for_status()
@@ -104,7 +102,9 @@ def verify_token(authorization_header: str | None) -> AuthenticatedUser | None:
         return None
 
 
-def require_auth(event: dict[str, Any]) -> tuple[AuthenticatedUser, dict[str, Any]] | tuple[None, dict[str, Any]]:
+def require_auth(
+    event: dict[str, Any],
+) -> tuple[AuthenticatedUser, dict[str, Any]] | tuple[None, dict[str, Any]]:
     """
     Require authentication for a Lambda function.
 

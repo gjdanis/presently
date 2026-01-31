@@ -15,7 +15,8 @@
       "Bash(./create-test-user.sh:*)",
       "Bash(echo:*)",
       "Bash(PHOTOS_BUCKET=\"presently-photos-dev-us-east-1-479453697367\" ENVIRONMENT=\"local\" python3 main.py)",
-      "Bash(aws s3 presign:*)"
+      "Bash(aws s3 presign:*)",
+      "Bash(make lint)"
     ],
     "deny": [],
     "ask": []

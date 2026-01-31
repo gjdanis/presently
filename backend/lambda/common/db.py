@@ -1,8 +1,9 @@
 """Database connection and utilities."""
 
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any
 
 import psycopg2
 from psycopg2 import pool
@@ -107,7 +108,7 @@ def execute_query(
             logger.debug(f"Query returned: {len(results)} rows")
             return results
     except Exception as e:
-        logger.error(f"Database query failed: {str(e)}", exc_info=True)
+        logger.exception(f"Database query failed: {str(e)}")
         raise
 
 
@@ -122,9 +123,17 @@ def execute_insert(query: str, params: tuple[Any, ...]) -> Any:
     Returns:
         Dict of inserted row
     """
-    with get_db_cursor() as cur:
-        cur.execute(query, params)
-        return cur.fetchone()
+    logger.debug(f"Executing INSERT: {query.strip()[:100]}...")
+
+    try:
+        with get_db_cursor() as cur:
+            cur.execute(query, params)
+            result = cur.fetchone()
+            logger.debug("INSERT successful")
+            return result
+    except Exception as e:
+        logger.exception(f"Database INSERT failed: {str(e)}")
+        raise
 
 
 def execute_update(query: str, params: tuple[Any, ...]) -> int:
@@ -138,9 +147,17 @@ def execute_update(query: str, params: tuple[Any, ...]) -> int:
     Returns:
         Number of affected rows
     """
-    with get_db_cursor() as cur:
-        cur.execute(query, params)
-        return cur.rowcount
+    logger.debug(f"Executing UPDATE: {query.strip()[:100]}...")
+
+    try:
+        with get_db_cursor() as cur:
+            cur.execute(query, params)
+            rowcount = cur.rowcount
+            logger.debug(f"UPDATE affected {rowcount} rows")
+            return rowcount
+    except Exception as e:
+        logger.exception(f"Database UPDATE failed: {str(e)}")
+        raise
 
 
 def execute_delete(query: str, params: tuple[Any, ...]) -> int:
@@ -154,6 +171,14 @@ def execute_delete(query: str, params: tuple[Any, ...]) -> int:
     Returns:
         Number of affected rows
     """
-    with get_db_cursor() as cur:
-        cur.execute(query, params)
-        return cur.rowcount
+    logger.debug(f"Executing DELETE: {query.strip()[:100]}...")
+
+    try:
+        with get_db_cursor() as cur:
+            cur.execute(query, params)
+            rowcount = cur.rowcount
+            logger.debug(f"DELETE affected {rowcount} rows")
+            return rowcount
+    except Exception as e:
+        logger.exception(f"Database DELETE failed: {str(e)}")
+        raise

@@ -1,11 +1,12 @@
 """FastAPI authentication dependency."""
 
 import os
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from common.auth import verify_token
-from common.models import AuthenticatedUser
 from common.db import execute_query
+from common.models import AuthenticatedUser
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 security = HTTPBearer()
 
@@ -27,9 +28,7 @@ def get_local_user_by_email(email: str) -> AuthenticatedUser | None:
         return None
 
     return AuthenticatedUser(
-        sub=str(result["id"]),
-        email=result["email"],
-        name=result.get("name", "")
+        sub=str(result["id"]), email=result["email"], name=result.get("name", "")
     )
 
 

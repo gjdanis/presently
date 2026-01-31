@@ -104,6 +104,9 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Role: !Sub '{{resolve:ssm:/${Environment}/LambdaRole}}'
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref NeonDatabaseURL
 
   CognitoPostConfirmationFunction:
     Type: AWS::Serverless::Function
@@ -118,6 +121,23 @@ Resources:
       Environment:
         Variables:
           DATABASE_URL: !Ref NeonDatabaseURL
+
+  # Lambda permissions for Cognito to invoke trigger functions
+  PreSignupLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CognitoPreSignupFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/{{resolve:ssm:/${Environment}/UserPoolId}}'
+
+  PostConfirmationLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CognitoPostConfirmationFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/{{resolve:ssm:/${Environment}/UserPoolId}}'
 
 Outputs:
   ApiUrl:

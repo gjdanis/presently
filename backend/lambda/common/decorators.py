@@ -1,9 +1,9 @@
 """Common decorators for Lambda handlers."""
 
 import json
-import traceback
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
 from .logger import setup_logger
 
@@ -22,6 +22,7 @@ def handle_cors(allowed_methods: str = "GET,POST,PUT,DELETE,OPTIONS") -> Callabl
         def handler(event, context):
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(event: dict[str, Any], context: Any) -> dict[str, Any]:
@@ -58,12 +59,15 @@ def handle_cors(allowed_methods: str = "GET,POST,PUT,DELETE,OPTIONS") -> Callabl
                 return {
                     "statusCode": 500,
                     "headers": cors_headers,
-                    "body": json.dumps({
-                        "error": "Internal Server Error",
-                        "message": str(e),
-                        "type": type(e).__name__,
-                    })
+                    "body": json.dumps(
+                        {
+                            "error": "Internal Server Error",
+                            "message": str(e),
+                            "type": type(e).__name__,
+                        }
+                    ),
                 }
 
         return wrapper
+
     return decorator

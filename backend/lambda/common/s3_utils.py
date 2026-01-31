@@ -2,7 +2,6 @@
 
 import os
 import re
-from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -23,7 +22,7 @@ def s3_uri_to_presigned_url(s3_uri: str, expires_in: int = 3600) -> str:
         ValueError: If s3_uri is not a valid S3 URI
     """
     # Parse S3 URI
-    match = re.match(r's3://([^/]+)/(.+)', s3_uri)
+    match = re.match(r"s3://([^/]+)/(.+)", s3_uri)
     if not match:
         raise ValueError(f"Invalid S3 URI format: {s3_uri}")
 
@@ -32,16 +31,14 @@ def s3_uri_to_presigned_url(s3_uri: str, expires_in: int = 3600) -> str:
 
     try:
         # Use AWS_REGION env var or default to us-east-1
-        region = os.getenv('AWS_REGION', 'us-east-1')
-        s3_client = boto3.client('s3', region_name=region)
+        region = os.getenv("AWS_REGION", "us-east-1")
+        s3_client = boto3.client("s3", region_name=region)
 
         # Ensure expires_in doesn't exceed 7 days (S3 limit)
         expires_in = min(expires_in, 604800)
 
         url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': bucket_name, 'Key': key},
-            ExpiresIn=expires_in
+            "get_object", Params={"Bucket": bucket_name, "Key": key}, ExpiresIn=expires_in
         )
 
         return url

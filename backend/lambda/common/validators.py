@@ -1,7 +1,7 @@
 """Request validation utilities."""
 
 import json
-from typing import Any, Type, TypeVar
+from typing import Any, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, ValidationError
@@ -14,7 +14,9 @@ logger = setup_logger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 
-def validate_request_body(event: dict[str, Any], model: Type[T]) -> tuple[T | None, dict[str, Any] | None]:
+def validate_request_body(
+    event: dict[str, Any], model: type[T]
+) -> tuple[T | None, dict[str, Any] | None]:
     """
     Validate request body against a Pydantic model.
 

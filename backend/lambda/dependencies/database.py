@@ -1,6 +1,7 @@
 """FastAPI database dependency."""
 
-from typing import Generator
+from collections.abc import Generator
+
 from common.db import get_db_connection, return_db_connection
 
 

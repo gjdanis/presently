@@ -2,10 +2,8 @@
 
 import os
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException, status
 
 from common.db import execute_delete, execute_insert, execute_query, execute_update
 from common.email_templates import get_existing_user_email, get_new_user_email
@@ -18,6 +16,7 @@ from common.models import (
     InviterInfo,
 )
 from dependencies.auth import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter()
 
@@ -181,7 +180,7 @@ async def get_invitation(token: str):
         )
 
     # Check if expired
-    if result["expires_at"] < datetime.now(timezone.utc):
+    if result["expires_at"] < datetime.now(UTC):
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
             detail="This invitation has expired",
@@ -232,7 +231,7 @@ async def accept_invitation(
         )
 
     # Check if expired
-    if invitation["expires_at"] < datetime.now(timezone.utc):
+    if invitation["expires_at"] < datetime.now(UTC):
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
             detail="This invitation has expired",

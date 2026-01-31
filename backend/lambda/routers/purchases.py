@@ -2,11 +2,10 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-
 from common.db import execute_delete, execute_insert, execute_query
 from common.models import AuthenticatedUser, PurchaseCreate, PurchaseResponse
 from dependencies.auth import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter()
 

@@ -1,7 +1,5 @@
 """Groups management FastAPI router."""
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response
-
 from common.db import execute_delete, execute_insert, execute_query, execute_update
 from common.logger import setup_logger
 from common.models import (
@@ -18,6 +16,7 @@ from common.models import (
 )
 from common.s3_utils import s3_uri_to_presigned_url
 from dependencies.auth import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 logger = setup_logger(__name__)
 
@@ -63,9 +62,7 @@ async def create_group(
         RETURNING id, name, description, created_at, updated_at
     """
 
-    group_result = execute_insert(
-        group_query, (group_data.name, group_data.description, user_id)
-    )
+    group_result = execute_insert(group_query, (group_data.name, group_data.description, user_id))
 
     if not group_result:
         raise HTTPException(
@@ -172,7 +169,9 @@ async def get_group_detail(
             item_data["purchased_by"] = item["purchased_by"]
 
         # Convert S3 URI to presigned URL if photo_url exists
-        item_data["photo_url"] = s3_uri_to_presigned_url(item["photo_url"]) if item.get("photo_url") else None
+        item_data["photo_url"] = (
+            s3_uri_to_presigned_url(item["photo_url"]) if item.get("photo_url") else None
+        )
 
         wishlists_by_user[owner_id].append(item_data)
 
@@ -181,16 +180,15 @@ async def get_group_detail(
         WishlistUserGroup(
             userId=str(member.user_id),
             userName=member.name,
-            items=[WishlistItemInGroup(**item) for item in wishlists_by_user.get(str(member.user_id), [])],
+            items=[
+                WishlistItemInGroup(**item)
+                for item in wishlists_by_user.get(str(member.user_id), [])
+            ],
         )
         for member in members
     ]
 
-    return GroupDetailResponse(
-        group=GroupBasicInfo(**group),
-        members=members,
-        wishlists=wishlists
-    )
+    return GroupDetailResponse(group=GroupBasicInfo(**group), members=members, wishlists=wishlists)
 
 
 @router.put("/{group_id}")

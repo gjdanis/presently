@@ -134,7 +134,7 @@ lint:
 	@$(PYTHON) -m ruff check $(LAMBDA_DIR)
 	@echo ""
 	@echo "▶ Frontend (TypeScript):"
-	@cd $(FRONTEND_DIR) && npm run lint
+	@cd $(FRONTEND_DIR) && ESLINT_USE_FLAT_CONFIG=false npm run lint
 	@echo ""
 	@echo "✅ Linting complete!"
 

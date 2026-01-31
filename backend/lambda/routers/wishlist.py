@@ -3,8 +3,6 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-
 from common.db import execute_delete, execute_insert, execute_query, execute_update
 from common.models import (
     AuthenticatedUser,
@@ -15,6 +13,7 @@ from common.models import (
 )
 from common.s3_utils import s3_uri_to_presigned_url
 from dependencies.auth import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter()
 
@@ -253,7 +252,7 @@ async def update_wishlist_item(
 
         # Create new assignments
         for group_id in update_data.group_ids:
-            execute_query(
+            execute_update(
                 "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
                 (str(item_id), str(group_id)),
             )

@@ -1,12 +1,12 @@
 """Profile management FastAPI router."""
 
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
 
 from common.db import execute_insert, execute_query
 from common.logger import setup_logger
 from common.models import AuthenticatedUser, ProfileResponse, ProfileUpdate
 from dependencies.auth import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, status
 
 logger = setup_logger(__name__)
 

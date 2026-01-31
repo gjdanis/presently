@@ -5,11 +5,10 @@ import uuid
 
 import boto3
 from botocore.exceptions import ClientError
-from fastapi import APIRouter, Depends, HTTPException, status
-
-from common.models import AuthenticatedUser
 from common.logger import setup_logger
+from common.models import AuthenticatedUser
 from dependencies.auth import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, status
 
 logger = setup_logger(__name__)
 
@@ -26,7 +25,6 @@ async def get_presigned_upload_url(current_user: AuthenticatedUser = Depends(get
     """
     user_id = str(current_user.sub)
     bucket_name = os.environ.get("PHOTOS_BUCKET")
-    cdn_domain = os.environ.get("PHOTOS_CDN")
     region = os.environ.get("AWS_REGION", "us-east-1")
 
     if not bucket_name:
@@ -61,9 +59,7 @@ async def get_presigned_upload_url(current_user: AuthenticatedUser = Depends(get
 
         # Generate presigned GET URL for immediate preview (1 hour expiry)
         preview_url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': bucket_name, 'Key': file_key},
-            ExpiresIn=3600
+            "get_object", Params={"Bucket": bucket_name, "Key": file_key}, ExpiresIn=3600
         )
 
         return {
@@ -78,10 +74,10 @@ async def get_presigned_upload_url(current_user: AuthenticatedUser = Depends(get
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate upload URL: {str(e)}",
-        )
+        ) from e
     except Exception as e:
         logger.exception("Unexpected error generating upload URL")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
-        )
+        ) from e

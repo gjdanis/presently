@@ -4,13 +4,15 @@ Presently FastAPI Application
 This application works both locally (via uvicorn) and on AWS Lambda (via Mangum).
 """
 
+import logging
 import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 # Import routers (will create these next)
-from routers import profile, groups, wishlist, purchases, invitations, photos
+from routers import groups, invitations, photos, profile, purchases, wishlist
 
 # Create FastAPI app
 app = FastAPI(
@@ -63,9 +65,9 @@ async def health_check():
 
 # Mangum handler for AWS Lambda
 # Configure Mangum to handle API Gateway's stage prefix
-import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 
 def handler(event, context):
     """Lambda handler with logging."""
@@ -79,12 +81,14 @@ def handler(event, context):
     logger.info(f"Response status: {response.get('statusCode', 'unknown')}")
     return response
 
+
 # For local development
 if __name__ == "__main__":
     import uvicorn
 
     port = int(os.getenv("PORT", 8000))
-    print(f"""
+    print(
+        f"""
 ╔════════════════════════════════════════════════════════════════╗
 ║                Presently FastAPI Server                        ║
 ╚════════════════════════════════════════════════════════════════╝
@@ -96,7 +100,8 @@ if __name__ == "__main__":
 🌍 Environment: {os.getenv('ENVIRONMENT', 'local')}
 
 Press Ctrl+C to stop
-""")
+"""
+    )
 
     uvicorn.run(
         "main:app",
