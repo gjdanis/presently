@@ -12,7 +12,10 @@
       "Bash(make deploy-dev:*)",
       "Bash(export API_URL=\"https://a5rucpyze9.execute-api.us-east-1.amazonaws.com\")",
       "Bash(./test-api.sh:*)",
-      "Bash(./create-test-user.sh:*)"
+      "Bash(./create-test-user.sh:*)",
+      "Bash(echo:*)",
+      "Bash(PHOTOS_BUCKET=\"presently-photos-dev-us-east-1-479453697367\" ENVIRONMENT=\"local\" python3 main.py)",
+      "Bash(aws s3 presign:*)"
     ],
     "deny": [],
     "ask": []

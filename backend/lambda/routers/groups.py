@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from common.db import execute_delete, execute_insert, execute_query, execute_update
 from common.logger import setup_logger
 from common.models import AuthenticatedUser, GroupCreate, GroupMemberResponse, GroupResponse, GroupUpdate
+from common.s3_utils import s3_uri_to_presigned_url
 from dependencies.auth import get_current_user
 
 logger = setup_logger(__name__)
@@ -159,6 +160,9 @@ async def get_group_detail(
         else:
             item_data["is_purchased"] = item["purchased_by"] is not None
             item_data["purchased_by"] = item["purchased_by"]
+
+        # Convert S3 URI to presigned URL if photo_url exists
+        item_data["photo_url"] = s3_uri_to_presigned_url(item["photo_url"]) if item.get("photo_url") else None
 
         wishlists_by_user[owner_id].append(item_data)
 

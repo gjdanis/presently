@@ -109,7 +109,7 @@ class WishlistItemBase(BaseModel):
     description: Optional[str] = None
     url: Optional[HttpUrl] = None
     price: Optional[Decimal] = Field(None, ge=0)
-    photo_url: Optional[HttpUrl] = None
+    photo_url: Optional[str] = None  # S3 URI (s3://bucket/key) - converted to presigned URL by backend
 
 
 class WishlistItemCreate(WishlistItemBase):
@@ -126,7 +126,7 @@ class WishlistItemUpdate(BaseModel):
     description: Optional[str] = None
     url: Optional[HttpUrl] = None
     price: Optional[Decimal] = Field(None, ge=0)
-    photo_url: Optional[HttpUrl] = None
+    photo_url: Optional[str] = None  # S3 URI (s3://bucket/key) - converted to presigned URL by backend
     group_ids: Optional[list[UUID]] = None
     rank: Optional[int] = Field(None, ge=0)
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { api } from '@/lib/api'
 
 type ImageUploadProps = {
   currentImageUrl?: string | null
@@ -32,9 +33,29 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
 
     try {
       // Resize and compress the image
-      const resizedDataUrl = await resizeImage(file, 800, 800, 0.85)
-      setPreview(resizedDataUrl)
-      onImageChange(resizedDataUrl)
+      const resizedBlob = await resizeImageToBlob(file, 800, 800, 0.85)
+
+      // Try to upload to S3
+      try {
+        const { upload_url, fields, file_url, preview_url } = await api.getPhotoUploadUrl()
+
+        // Convert blob to file for upload
+        const resizedFile = new File([resizedBlob], file.name, { type: 'image/jpeg' })
+
+        // Upload to S3
+        await api.uploadPhotoToS3(upload_url, fields, resizedFile)
+
+        // Use preview URL for display, but save S3 URI
+        setPreview(preview_url)
+        onImageChange(file_url)
+      } catch (s3Error) {
+        console.warn('S3 upload failed, falling back to base64:', s3Error)
+
+        // Fallback to base64 (for local dev or if S3 not configured)
+        const resizedDataUrl = await blobToDataUrl(resizedBlob)
+        setPreview(resizedDataUrl)
+        onImageChange(resizedDataUrl)
+      }
     } catch (error) {
       console.error('Error processing image:', error)
       alert('Failed to process image')
@@ -102,13 +123,13 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
   )
 }
 
-// Helper function to resize image
-function resizeImage(
+// Helper function to resize image and return Blob
+function resizeImageToBlob(
   file: File,
   maxWidth: number,
   maxHeight: number,
   quality: number
-): Promise<string> {
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
 
@@ -139,9 +160,18 @@ function resizeImage(
 
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Convert to data URL with compression
-        const dataUrl = canvas.toDataURL('image/jpeg', quality)
-        resolve(dataUrl)
+        // Convert to Blob with compression
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob)
+            } else {
+              reject(new Error('Failed to create blob'))
+            }
+          },
+          'image/jpeg',
+          quality
+        )
       }
 
       img.onerror = () => reject(new Error('Failed to load image'))
@@ -150,5 +180,15 @@ function resizeImage(
 
     reader.onerror = () => reject(new Error('Failed to read file'))
     reader.readAsDataURL(file)
+  })
+}
+
+// Helper to convert Blob to data URL (for base64 fallback)
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('Failed to convert blob to data URL'))
+    reader.readAsDataURL(blob)
   })
 }

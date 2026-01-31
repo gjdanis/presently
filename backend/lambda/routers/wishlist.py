@@ -13,6 +13,7 @@ from common.models import (
     WishlistItemResponse,
     WishlistItemUpdate,
 )
+from common.s3_utils import s3_uri_to_presigned_url
 from dependencies.auth import get_current_user
 
 router = APIRouter()
@@ -33,7 +34,7 @@ async def get_wishlist(current_user: AuthenticatedUser = Depends(get_current_use
 
     results = execute_query(query, (user_id,))
 
-    # Get groups for each item
+    # Get groups for each item and convert S3 URIs to presigned URLs
     items = []
     for item in results:
         groups_query = """
@@ -45,7 +46,10 @@ async def get_wishlist(current_user: AuthenticatedUser = Depends(get_current_use
         groups_results = execute_query(groups_query, (item["id"],))
         groups = [GroupInfo(**g) for g in groups_results]
 
-        item_data = {**item, "groups": groups}
+        # Convert S3 URI to presigned URL if photo_url exists
+        photo_url = s3_uri_to_presigned_url(item["photo_url"]) if item.get("photo_url") else None
+
+        item_data = {**item, "groups": groups, "photo_url": photo_url}
         items.append(WishlistItemResponse(**item_data))
 
     return {"items": items}
@@ -167,7 +171,10 @@ async def get_wishlist_item(
     groups_results = execute_query(groups_query, (str(item_id),))
     groups = [GroupInfo(**g) for g in groups_results]
 
-    response_data = {**item, "groups": groups}
+    # Convert S3 URI to presigned URL if photo_url exists
+    photo_url = s3_uri_to_presigned_url(item["photo_url"]) if item.get("photo_url") else None
+
+    response_data = {**item, "groups": groups, "photo_url": photo_url}
     return WishlistItemResponse(**response_data)
 
 
@@ -246,7 +253,7 @@ async def update_wishlist_item(
 
         # Create new assignments
         for group_id in update_data.group_ids:
-            execute_insert(
+            execute_query(
                 "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
                 (str(item_id), str(group_id)),
             )
@@ -261,7 +268,10 @@ async def update_wishlist_item(
     groups_results = execute_query(groups_query, (str(item_id),))
     groups = [GroupInfo(**g) for g in groups_results]
 
-    response_data = {**item, "groups": groups}
+    # Convert S3 URI to presigned URL if photo_url exists
+    photo_url = s3_uri_to_presigned_url(item["photo_url"]) if item.get("photo_url") else None
+
+    response_data = {**item, "groups": groups, "photo_url": photo_url}
     return WishlistItemResponse(**response_data)
 
 

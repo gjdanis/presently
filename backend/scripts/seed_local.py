@@ -10,6 +10,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 from datetime import datetime, timedelta
 import psycopg2
+import boto3
 from dotenv import load_dotenv
 
 # Load local environment variables
@@ -45,6 +46,94 @@ USERS = [
         "name": "Charlie Davis",
     },
 ]
+
+# S3 Configuration
+S3_BUCKET = os.getenv("PHOTOS_BUCKET", "presently-photos-dev-us-east-1-479453697367")
+
+
+def create_test_image(color: tuple, text: str, size=(400, 400)) -> bytes:
+    """
+    Create a simple colored test image with text using PIL.
+    """
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        import io
+
+        # Create image with colored background
+        img = Image.new('RGB', size, color=color)
+        draw = ImageDraw.Draw(img)
+
+        # Add text
+        try:
+            # Try to use a nice font
+            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 36)
+        except:
+            # Fallback to default font
+            font = ImageFont.load_default()
+
+        # Calculate text position (centered)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        position = ((size[0] - text_width) // 2, (size[1] - text_height) // 2)
+
+        # Draw text with shadow for better visibility
+        shadow_offset = 2
+        draw.text((position[0] + shadow_offset, position[1] + shadow_offset), text, font=font, fill=(0, 0, 0, 128))
+        draw.text(position, text, font=font, fill=(255, 255, 255))
+
+        # Convert to JPEG bytes
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='JPEG', quality=85)
+        img_bytes.seek(0)
+
+        return img_bytes.read()
+
+    except ImportError:
+        print("   ⚠️  PIL not installed, using minimal JPEG")
+        # Fallback to minimal JPEG
+        return bytes.fromhex(
+            'ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707'
+            '070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c'
+            '1c2837292c30313434341f27393d38323c2e333432ffdb0043010909090c0b0c180d'
+            '0d1832211c213232323232323232323232323232323232323232323232323232323232'
+            '32323232323232323232323232323232323232323232ffc00011080001000103011100'
+            '02110103011100ffc4001500010100000000000000000000000000000000ffc40014100100'
+            '00000000000000000000000000ffc400150001010000000000000000000000000000'
+            '00ffc4001411010000000000000000000000000000000000ffda000c03010002110311'
+            '003f00bf800000ffd9'
+        )
+
+
+def upload_test_image_to_s3(key: str, color: tuple, text: str) -> str:
+    """
+    Upload a test image to S3 and return the S3 key (not a URL).
+    The backend will generate presigned URLs on-demand.
+    Creates a colored image with text.
+    """
+    import io
+
+    try:
+        s3_client = boto3.client("s3")
+
+        # Create test image
+        img_bytes = create_test_image(color, text)
+
+        # Upload to S3
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=key,
+            Body=img_bytes,
+            ContentType='image/jpeg'
+        )
+
+        # Return just the S3 key, not a full URL
+        # Format: s3://bucket-name/key
+        return f"s3://{S3_BUCKET}/{key}"
+    except Exception as e:
+        print(f"   ⚠️  Warning: Could not upload test image to S3: {e}")
+        print(f"   Using placeholder URL instead")
+        return None
 
 
 def seed_database():
@@ -159,6 +248,18 @@ def seed_database():
         # Create wishlist items for each user
         print("🎁 Creating wishlist items...")
 
+        # Upload test images to S3
+        print("   📸 Uploading test images to S3...")
+        photo_url_1 = upload_test_image_to_s3("seed-data/headphones.jpg", (70, 130, 180), "🎧\nHeadphones")
+        photo_url_2 = upload_test_image_to_s3("seed-data/yoga-mat.jpg", (147, 112, 219), "🧘\nYoga Mat")
+        photo_url_3 = upload_test_image_to_s3("seed-data/smartwatch.jpg", (255, 99, 71), "⌚\nSmart Watch")
+        if photo_url_1:
+            print(f"   ✓ Uploaded headphones.jpg")
+        if photo_url_2:
+            print(f"   ✓ Uploaded yoga-mat.jpg")
+        if photo_url_3:
+            print(f"   ✓ Uploaded smartwatch.jpg")
+
         # Alice's wishlist items (shared with Family)
         alice_items = [
             {
@@ -167,6 +268,7 @@ def seed_database():
                 "url": "https://example.com/headphones",
                 "price": 299.99,
                 "rank": 1,
+                "photo_url": photo_url_1,
             },
             {
                 "name": "Yoga Mat",
@@ -174,6 +276,7 @@ def seed_database():
                 "url": "https://example.com/yoga-mat",
                 "price": 45.00,
                 "rank": 2,
+                "photo_url": photo_url_2,
             },
             {
                 "name": "Recipe Book",
@@ -181,6 +284,7 @@ def seed_database():
                 "url": None,
                 "price": 29.99,
                 "rank": 3,
+                "photo_url": None,
             },
         ]
 
@@ -190,8 +294,8 @@ def seed_database():
             alice_item_ids.append(item_id)
             cur.execute(
                 """
-                INSERT INTO wishlist_items (id, user_id, name, description, url, price, rank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO wishlist_items (id, user_id, name, description, url, price, photo_url, rank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     item_id,
@@ -200,6 +304,7 @@ def seed_database():
                     item["description"],
                     item["url"],
                     item["price"],
+                    item["photo_url"],
                     item["rank"],
                 ),
             )
@@ -221,6 +326,7 @@ def seed_database():
                 "url": "https://example.com/smartwatch",
                 "price": 399.99,
                 "rank": 1,
+                "photo_url": photo_url_3,
                 "groups": [family_group_id, work_group_id],  # Share with multiple groups
             },
             {
@@ -229,6 +335,7 @@ def seed_database():
                 "url": "https://example.com/coffee",
                 "price": 149.99,
                 "rank": 2,
+                "photo_url": None,
                 "groups": [family_group_id],
             },
             {
@@ -237,6 +344,7 @@ def seed_database():
                 "url": None,
                 "price": 79.99,
                 "rank": 3,
+                "photo_url": None,
                 "groups": [work_group_id],
             },
         ]
@@ -247,8 +355,8 @@ def seed_database():
             bob_item_ids.append(item_id)
             cur.execute(
                 """
-                INSERT INTO wishlist_items (id, user_id, name, description, url, price, rank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO wishlist_items (id, user_id, name, description, url, price, photo_url, rank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     item_id,
@@ -257,6 +365,7 @@ def seed_database():
                     item["description"],
                     item["url"],
                     item["price"],
+                    item["photo_url"],
                     item["rank"],
                 ),
             )

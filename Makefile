@@ -181,6 +181,8 @@ backend:
 	@cd $(LAMBDA_DIR) && \
 		DATABASE_URL=postgresql://presently:presently_local@localhost:5433/presently_local \
 		ENVIRONMENT=local \
+		PHOTOS_BUCKET=presently-photos-dev-us-east-1-479453697367 \
+		AWS_REGION=us-east-1 \
 		$(PYTHON) main.py
 
 # ============================================================================
