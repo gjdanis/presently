@@ -11,11 +11,14 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 @pytest.fixture(scope="session")
 def test_db_url() -> str:
-    """Get test database URL from environment or use default."""
-    return os.environ.get(
-        "TEST_DATABASE_URL",
-        "postgresql://test:test@localhost:5433/presently_test"
-    )
+    """Get test database URL - uses the local Docker database."""
+    # Use the local Docker database (presently-local-db on port 5433)
+    test_url = "postgresql://presently:presently_local@localhost:5433/presently_local"
+
+    # Override environment to ensure we use test database
+    os.environ["DATABASE_URL"] = test_url
+
+    return test_url
 
 
 @pytest.fixture(scope="session")

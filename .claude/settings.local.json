@@ -20,7 +20,8 @@
       "Bash(mkdir:*)",
       "Bash(source:*)",
       "Bash(ruff check:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest backend/tests/integration/test_groups_service.py::test_get_group_detail -v)"
     ],
     "deny": [],
     "ask": []

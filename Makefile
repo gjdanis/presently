@@ -114,13 +114,11 @@ test:
 	@echo "✅ All tests passed!"
 
 _test-integration:
-	@echo "🐳 Starting test database..."
-	@docker-compose -f docker-compose.test.yml up -d
-	@sleep 5
-	@export TEST_DATABASE_URL='postgresql://test:test@localhost:5433/presently_test' && \
-		$(PYTHON) -m pytest $(BACKEND_DIR)/tests/integration -v || \
-		(docker-compose -f docker-compose.test.yml down -v && exit 1)
-	@docker-compose -f docker-compose.test.yml down -v
+	@echo "🐳 Ensuring local database is running..."
+	@docker-compose -f docker-compose.local.yml up -d
+	@sleep 2
+	@echo "▶ Running integration tests..."
+	@$(PYTHON) -m pytest $(BACKEND_DIR)/tests/integration -v
 	@echo "✅ Integration tests complete"
 
 # ============================================================================

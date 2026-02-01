@@ -49,7 +49,7 @@ class WishlistRepository:
                    wi.price, wi.photo_url, wi.rank, wi.created_at, wi.updated_at
             FROM wishlist_items wi
             WHERE wi.user_id = %s
-            ORDER BY wi.rank DESC, wi.created_at DESC
+            ORDER BY wi.rank ASC, wi.created_at DESC
         """
         results = execute_query(query, (user_id,))
         return [WishlistItemEntity(**row) for row in results]
