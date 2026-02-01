@@ -37,6 +37,7 @@ help:
 	@echo ""
 	@echo "🚢 Deployment:"
 	@echo "  make deploy-dev     - Deploy to dev environment (AWS)"
+	@echo "  make deploy-prod    - Deploy to production (runs lint + tests first)"
 	@echo ""
 	@echo "🧹 Cleanup:"
 	@echo "  make clean          - Remove build artifacts"
@@ -288,6 +289,72 @@ deploy-dev:
 	echo "💡 Next steps:" && \
 	echo "  1. Update NEXT_PUBLIC_API_URL in .env.local with the URL above" && \
 	echo "  2. Deploy frontend to Vercel"
+
+deploy-prod:
+	@echo "🚀 Deploying to PRODUCTION environment..."
+	@echo "⚠️  This will deploy to production. Press Ctrl+C to cancel."
+	@sleep 3
+	@echo ""
+	@if [ ! -f ".env.production" ]; then \
+		echo "❌ .env.production not found"; \
+		echo "   Copy .env.production.example to .env.production and configure"; \
+		exit 1; \
+	fi
+	@echo "🔍 Running quality checks..."
+	@echo ""
+	@echo "▶ Running linter..."
+	@$(MAKE) lint || (echo "❌ Linting failed. Fix errors before deploying to production." && exit 1)
+	@echo ""
+	@echo "▶ Running tests..."
+	@$(MAKE) test || (echo "❌ Tests failed. Fix errors before deploying to production." && exit 1)
+	@echo ""
+	@echo "✅ All quality checks passed!"
+	@echo ""
+	@echo "📄 Loading environment variables from .env.production..."
+	@export $$(cat .env.production | grep -v '^#' | grep -v '^$$' | xargs) && \
+	if [ -z "$$DATABASE_URL" ]; then \
+		echo "❌ DATABASE_URL not set in .env.production"; \
+		exit 1; \
+	fi && \
+	if [ -z "$$SENDER_EMAIL" ]; then \
+		echo "❌ SENDER_EMAIL not set in .env.production"; \
+		exit 1; \
+	fi && \
+	if [ -z "$$FRONTEND_URL" ]; then \
+		echo "❌ FRONTEND_URL not set in .env.production"; \
+		exit 1; \
+	fi && \
+	echo "✅ Environment variables loaded" && \
+	echo "" && \
+	echo "📦 Building SAM application..." && \
+	cd infrastructure && sam build && \
+	echo "" && \
+	echo "🚀 Deploying to AWS Production..." && \
+	sam deploy \
+		--template-file .aws-sam/build/template.yaml \
+		--stack-name presently-prod \
+		--region us-east-1 \
+		--parameter-overrides \
+			Environment=prod \
+			NeonDatabaseURL="$$DATABASE_URL" \
+			SenderEmail="$$SENDER_EMAIL" \
+			FrontendURL="$$FRONTEND_URL" \
+		--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+		--resolve-s3 \
+		--no-fail-on-empty-changeset && \
+	echo "" && \
+	echo "✅ Production deployment complete!" && \
+	echo "" && \
+	echo "📋 Production API Gateway URL:" && \
+	aws cloudformation describe-stacks \
+		--stack-name presently-prod \
+		--region us-east-1 \
+		--query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+		--output text && \
+	echo "" && \
+	echo "💡 Next steps:" && \
+	echo "  1. Update NEXT_PUBLIC_API_URL in production frontend with the URL above" && \
+	echo "  2. Deploy frontend to production (Vercel)"
 
 # ============================================================================
 # Cleanup
