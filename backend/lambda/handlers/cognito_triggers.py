@@ -1,7 +1,6 @@
 """Cognito trigger handlers for user lifecycle events."""
 
 import logging
-import os
 
 from common.db import execute_insert
 

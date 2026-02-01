@@ -10,7 +10,6 @@ from common.models import (
     WishlistUserGroup,
 )
 from common.s3_utils import s3_uri_to_presigned_url
-from fastapi import HTTPException, status
 from repositories.groups_repository import GroupsRepository
 
 logger = setup_logger(__name__)

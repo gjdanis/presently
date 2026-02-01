@@ -263,6 +263,15 @@ class InvitationAcceptResponse(BaseModel):
     already_member: bool
 
 
+class InvitationCreateResponse(BaseModel):
+    """Invitation creation response."""
+
+    added_directly: bool
+    invite_url: str
+    email_sent: bool
+    user_exists: bool
+
+
 # ============================================================================
 # Photo Models
 # ============================================================================
@@ -275,10 +284,12 @@ class PhotoUploadResponse(BaseModel):
 
 
 class PresignedUrlResponse(BaseModel):
-    """Presigned URL response."""
+    """Presigned URL response for photo upload."""
 
-    upload_url: HttpUrl
-    file_url: HttpUrl
+    upload_url: str
+    fields: dict
+    file_url: str  # S3 URI for database storage
+    preview_url: str  # HTTP URL for immediate display
 
 
 # ============================================================================
