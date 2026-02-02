@@ -2,19 +2,47 @@
 
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { DashboardNav } from '@/components/DashboardNav'
 import Link from 'next/link'
+import { api } from '@/lib/api'
+import type { Group, WishlistItem } from '@/lib/types'
 
 export default function DashboardPage() {
   const { isAuthenticated, isLoading, profile } = useAuth()
   const router = useRouter()
+  const [groups, setGroups] = useState<Group[]>([])
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
+  const [loadingData, setLoadingData] = useState(true)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login')
     }
   }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadDashboardData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated])
+
+  async function loadDashboardData() {
+    try {
+      setLoadingData(true)
+      const [groupsData, wishlistData] = await Promise.all([
+        api.getGroups(),
+        api.getWishlist(),
+      ])
+      setGroups(groupsData.groups)
+      setWishlistItems(wishlistData.items)
+    } catch (error) {
+      console.error('Error loading dashboard data:', error)
+    } finally {
+      setLoadingData(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -36,43 +64,159 @@ export default function DashboardPage() {
       <DashboardNav userName={profile.name || 'User'} />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold mb-4">Welcome to Presently!</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              You're all set up. Let's start building your groups and wishlists.
-            </p>
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                <Link
-                  href="/dashboard/groups"
-                  className="p-6 border-2 border-blue-500 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                >
-                  <h3 className="font-semibold text-lg mb-2">Manage Groups</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    Create and manage your wishlist groups
-                  </p>
-                </Link>
-                <Link
-                  href="/dashboard/wishlists"
-                  className="p-6 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors"
-                >
-                  <h3 className="font-semibold text-lg mb-2">My Wishlists</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    View and edit your wishlist items
-                  </p>
-                </Link>
-              </div>
-              <div className="border-l-4 border-blue-500 pl-4">
-                <h3 className="font-semibold">Next Steps:</h3>
-                <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 mt-2 space-y-1">
-                  <li>Create or join a group</li>
-                  <li>Add items to your wishlist</li>
-                  <li>View other members' wishlists</li>
-                  <li>Mark items as purchased</li>
-                </ul>
-              </div>
+        <div className="px-4 py-6 sm:px-0 space-y-6">
+          {/* Header with greeting */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Welcome back, {profile.name?.split(' ')[0] || 'there'}!
+            </h1>
+            <div className="flex gap-3">
+              <Link
+                href="/dashboard/wishlists/new"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                + Add Item
+              </Link>
+              <Link
+                href="/dashboard/groups/new"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+              >
+                + Create Group
+              </Link>
             </div>
+          </div>
+
+          {/* Groups Section */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Your Groups</h2>
+
+            {loadingData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 animate-pulse">
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : groups.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+                <div className="text-6xl mb-4">👥</div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">No groups yet</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Create your first group to start sharing wishlists with friends and family!
+                </p>
+                <Link
+                  href="/dashboard/groups/new"
+                  className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                >
+                  Create Your First Group
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groups.map((group) => (
+                  <Link
+                    key={group.id}
+                    href={`/dashboard/groups/${group.id}`}
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{group.name}</h3>
+                      {group.role === 'admin' && (
+                        <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
+                          Admin
+                        </span>
+                      )}
+                    </div>
+                    {group.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                        {group.description}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Wishlist Items */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Wishlist Items</h2>
+
+            {loadingData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 animate-pulse">
+                    <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : wishlistItems.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+                <div className="text-6xl mb-4">🎁</div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">No wishlist items yet</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Start adding items to your wishlist so others know what you'd like!
+                </p>
+                <Link
+                  href="/dashboard/wishlists/new"
+                  className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                >
+                  Add Your First Item
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {wishlistItems.map((item) => {
+                  const photoUrl = item.photoUrl || item.photo_url
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700 overflow-hidden"
+                    >
+                      <Link href={`/dashboard/wishlists/${item.id}/edit`}>
+                        {photoUrl && (
+                          <img
+                            src={photoUrl}
+                            alt={item.name}
+                            className="w-full h-48 object-cover"
+                          />
+                        )}
+                      </Link>
+                      <div className="p-4">
+                        <Link href={`/dashboard/wishlists/${item.id}/edit`}>
+                          <h3 className="font-semibold text-lg mb-1 text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{item.name}</h3>
+                        </Link>
+                        {item.price && (
+                          <p className="text-blue-600 dark:text-blue-400 font-medium mb-2">
+                            ${Number(item.price).toFixed(2)}
+                          </p>
+                        )}
+                        {item.groups && item.groups.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {item.groups.map((group) => (
+                              <Link
+                                key={group.id}
+                                href={`/dashboard/groups/${group.id}`}
+                                className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                              >
+                                {group.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       </main>

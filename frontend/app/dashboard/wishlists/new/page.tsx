@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { ImageUpload } from '@/components/ImageUpload'
 import { api } from '@/lib/api'
@@ -13,6 +13,7 @@ type Group = {
 
 export default function NewWishlistItemPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated, isLoading } = useAuth()
   const [loading, setLoading] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
@@ -42,6 +43,12 @@ export default function NewWishlistItemPage() {
     try {
       const data = await api.getGroups()
       setGroups(data.groups.map((g: any) => ({ id: g.id, name: g.name })))
+
+      // Pre-select group from query parameter
+      const groupId = searchParams.get('group')
+      if (groupId && data.groups.some((g: any) => g.id === groupId)) {
+        setSelectedGroups([groupId])
+      }
     } catch (error) {
       console.error('Error loading groups:', error)
     }
@@ -63,7 +70,13 @@ export default function NewWishlistItemPage() {
         group_ids: selectedGroups,
       })
 
-      router.push('/dashboard/wishlists')
+      // If accessed from a group, redirect back to that group
+      const groupId = searchParams.get('group')
+      if (groupId) {
+        router.push(`/dashboard/groups/${groupId}`)
+      } else {
+        router.push('/dashboard/wishlists')
+      }
     } catch (error: any) {
       console.error('Error creating item:', error)
       const message = error?.response?.data?.error || 'Failed to create item'
