@@ -232,17 +232,18 @@ class PurchaseResponse(BaseModel):
 
 
 class InvitationCreate(BaseModel):
-    """Invitation creation request."""
+    """Multi-use invitation creation request."""
 
-    email: EmailStr
     role: str = Field(default="member", pattern="^(admin|member)$")
+    max_uses: int | None = Field(default=None, ge=1)  # NULL = unlimited
+    expires_in_days: int | None = Field(default=None, ge=1)
 
 
 class InviterInfo(BaseModel):
     """Inviter information."""
 
     name: str
-    email: EmailStr
+    email: EmailStr | None = None
 
 
 class InvitationResponse(BaseModel):
@@ -253,7 +254,11 @@ class InvitationResponse(BaseModel):
     group_description: str | None
     invited_by: InviterInfo
     role: str
-    expires_at: datetime
+    expires_at: datetime | None = None
+    max_uses: int | None = None
+    current_uses: int = 0
+    is_expired: bool = False
+    is_full: bool = False
 
 
 class InvitationAcceptResponse(BaseModel):
@@ -264,12 +269,12 @@ class InvitationAcceptResponse(BaseModel):
 
 
 class InvitationCreateResponse(BaseModel):
-    """Invitation creation response."""
+    """Multi-use invitation creation response."""
 
-    added_directly: bool
     invite_url: str
-    email_sent: bool
-    user_exists: bool
+    max_uses: int | None = None
+    current_uses: int = 0
+    expires_at: datetime | None = None
 
 
 # ============================================================================

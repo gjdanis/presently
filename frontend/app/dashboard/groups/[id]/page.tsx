@@ -28,12 +28,19 @@ export default function GroupDetailPage() {
     if (isAuthenticated && groupId) {
       loadGroup()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, groupId])
 
   const loadGroup = async () => {
     try {
       const data = await api.getGroup(groupId)
       setGroupData(data)
+
+      // Auto-select first member if there are members
+      if (data.members && data.members.length > 0 && !selectedMemberId) {
+        const firstMemberId = data.members[0].userId || data.members[0].user_id
+        setSelectedMemberId(firstMemberId)
+      }
     } catch (error) {
       console.error('Error loading group:', error)
       router.push('/dashboard/groups')

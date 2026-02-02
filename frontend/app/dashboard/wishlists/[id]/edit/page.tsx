@@ -25,6 +25,7 @@ export default function EditItemPage() {
     if (isAuthenticated && params.id) {
       loadItem()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, params.id])
 
   async function loadItem() {

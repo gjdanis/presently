@@ -241,20 +241,16 @@ db-migrate:
 
 deploy-dev:
 	@echo "🚀 Deploying to dev environment..."
-	@if [ ! -f ".env.local" ]; then \
-		echo "❌ .env.local not found"; \
-		echo "   Copy .env.local.example to .env.local and configure"; \
+	@if [ ! -f ".env.development" ]; then \
+		echo "❌ .env.development not found"; \
+		echo "   Copy .env.local to .env.development and configure for AWS"; \
 		exit 1; \
 	fi
 	@echo ""
-	@echo "📄 Loading environment variables from .env.local..."
-	@export $$(cat .env.local | grep -v '^#' | grep -v '^$$' | xargs) && \
+	@echo "📄 Loading environment variables from .env.development..."
+	@export $$(cat .env.development | grep -v '^#' | grep -v '^$$' | xargs) && \
 	if [ -z "$$DATABASE_URL" ]; then \
-		echo "❌ DATABASE_URL not set in .env.local"; \
-		exit 1; \
-	fi && \
-	if [ -z "$$SENDER_EMAIL" ]; then \
-		echo "❌ SENDER_EMAIL not set in .env.local"; \
+		echo "❌ DATABASE_URL not set in .env.development"; \
 		exit 1; \
 	fi && \
 	FRONTEND_URL=$${FRONTEND_URL:-https://presently-nu.vercel.app} && \
@@ -271,7 +267,6 @@ deploy-dev:
 		--parameter-overrides \
 			Environment=dev \
 			NeonDatabaseURL="$$DATABASE_URL" \
-			SenderEmail="$$SENDER_EMAIL" \
 			FrontendURL="$$FRONTEND_URL" \
 		--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
 		--resolve-s3 \
@@ -287,7 +282,7 @@ deploy-dev:
 		--output text && \
 	echo "" && \
 	echo "💡 Next steps:" && \
-	echo "  1. Update NEXT_PUBLIC_API_URL in .env.local with the URL above" && \
+	echo "  1. Update NEXT_PUBLIC_API_URL in .env.development with the URL above" && \
 	echo "  2. Deploy frontend to Vercel"
 
 deploy-prod:
@@ -316,10 +311,6 @@ deploy-prod:
 		echo "❌ DATABASE_URL not set in .env.production"; \
 		exit 1; \
 	fi && \
-	if [ -z "$$SENDER_EMAIL" ]; then \
-		echo "❌ SENDER_EMAIL not set in .env.production"; \
-		exit 1; \
-	fi && \
 	if [ -z "$$FRONTEND_URL" ]; then \
 		echo "❌ FRONTEND_URL not set in .env.production"; \
 		exit 1; \
@@ -337,7 +328,6 @@ deploy-prod:
 		--parameter-overrides \
 			Environment=prod \
 			NeonDatabaseURL="$$DATABASE_URL" \
-			SenderEmail="$$SENDER_EMAIL" \
 			FrontendURL="$$FRONTEND_URL" \
 		--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
 		--resolve-s3 \

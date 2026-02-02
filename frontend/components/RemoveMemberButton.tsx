@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 
@@ -8,14 +7,15 @@ type RemoveMemberButtonProps = {
   groupId: string
   userId: string
   userName: string
+  onSuccess?: () => void
 }
 
 export function RemoveMemberButton({
   groupId,
   userId,
   userName,
+  onSuccess,
 }: RemoveMemberButtonProps) {
-  const router = useRouter()
   const [isRemoving, setIsRemoving] = useState(false)
 
   async function handleRemove() {
@@ -27,10 +27,13 @@ export function RemoveMemberButton({
 
     try {
       await api.removeMember(groupId, userId)
-      router.refresh()
+      if (onSuccess) {
+        onSuccess()
+      }
     } catch (error) {
       console.error('Error removing member:', error)
       alert('Failed to remove member')
+    } finally {
       setIsRemoving(false)
     }
   }

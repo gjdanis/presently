@@ -10,8 +10,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-
-# Import routers (will create these next)
+from middleware import LoggingMiddleware
 from routers import groups, invitations, photos, profile, purchases, wishlist
 
 # Create FastAPI app
@@ -22,6 +21,9 @@ app = FastAPI(
     docs_url="/docs" if os.getenv("ENVIRONMENT") == "local" else None,  # Only enable docs locally
     redoc_url="/redoc" if os.getenv("ENVIRONMENT") == "local" else None,
 )
+
+# Add logging middleware (first, so it wraps everything)
+app.add_middleware(LoggingMiddleware)
 
 # Configure CORS
 app.add_middleware(

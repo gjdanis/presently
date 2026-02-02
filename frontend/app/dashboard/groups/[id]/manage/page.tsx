@@ -29,6 +29,7 @@ export default function ManageGroupPage() {
     if (isAuthenticated && groupId) {
       loadGroup()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, groupId])
 
   const loadGroup = async () => {
@@ -152,6 +153,7 @@ export default function ManageGroupPage() {
                           groupId={groupId}
                           userId={memberId}
                           userName={member.name}
+                          onSuccess={loadGroup}
                         />
                       )}
                     </div>

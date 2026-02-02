@@ -8,6 +8,8 @@ from common.models import (
     GroupResponse,
     GroupsListResponse,
     GroupUpdate,
+    InvitationCreate,
+    InvitationCreateResponse,
 )
 from dependencies.auth import get_current_user
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -117,6 +119,49 @@ async def delete_group(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+
+@router.post("/{group_id}/members", response_model=InvitationCreateResponse, status_code=status.HTTP_201_CREATED)
+async def create_invitation(
+    group_id: str,
+    invite_data: InvitationCreate,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> InvitationCreateResponse:
+    """Create a group invitation link."""
+    from services.invitations_service import InvitationsService
+
+    service = InvitationsService()
+    user_id = str(current_user.sub)
+
+    try:
+        return service.create_invitation(
+            user_id=user_id,
+            group_id=group_id,
+            role=invite_data.role or "member",
+            max_uses=invite_data.max_uses,
+            expires_in_days=invite_data.expires_in_days,
+        )
+    except ForbiddenError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
+    except BadRequestError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.get("/{group_id}/invitations/active")
+async def get_active_invitations(
+    group_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get list of active invitations for a group (admin only)."""
+    from services.invitations_service import InvitationsService
+
+    service = InvitationsService()
+    user_id = str(current_user.sub)
+
+    try:
+        return service.get_active_invitations(user_id, group_id)
+    except ForbiddenError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
 
 
 @router.delete("/{group_id}/members/{user_id_to_remove}", status_code=status.HTTP_204_NO_CONTENT)

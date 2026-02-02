@@ -16,11 +16,6 @@ Parameters:
     Description: Neon Postgres connection string
     NoEcho: true
 
-  SenderEmail:
-    Type: String
-    Description: Email address to send invitations from (must be verified in SES)
-    Default: ""
-
   FrontendURL:
     Type: String
     Description: Frontend URL for invitation links
@@ -211,15 +206,6 @@ Resources:
                 Action:
                   - s3:ListBucket
                 Resource: !GetAtt PhotosBucket.Arn
-        - PolicyName: LambdaSESAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ses:SendEmail
-                  - ses:SendRawEmail
-                Resource: '*'
 
   # ============================================================================
   # HTTP API Gateway
@@ -268,7 +254,6 @@ Resources:
           COGNITO_USER_POOL_ID: !Ref UserPool
           COGNITO_CLIENT_ID: !Ref UserPoolClient
           ENVIRONMENT: !Ref Environment
-          SENDER_EMAIL: !Ref SenderEmail
           FRONTEND_URL: !Ref FrontendURL
       Events:
         # Catch-all proxy route for FastAPI (handles all paths including /)
