@@ -86,6 +86,11 @@ class WishlistService:
         # Get group names for response
         groups = self.wishlist_repo.get_item_groups(str(item.id))
 
+        # Convert S3 URI to presigned URL
+        photo_url_presigned = (
+            s3_uri_to_presigned_url(item.photo_url) if item.photo_url else None
+        )
+
         return WishlistItemResponse(
             id=item.id,
             user_id=item.user_id,
@@ -93,7 +98,7 @@ class WishlistService:
             description=item.description,
             url=item.url,
             price=item.price,
-            photo_url=item.photo_url,
+            photo_url=photo_url_presigned,
             rank=item.rank,
             created_at=item.created_at,
             updated_at=item.updated_at,

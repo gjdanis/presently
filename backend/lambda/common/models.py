@@ -101,6 +101,13 @@ class GroupBasicInfo(GroupBase):
     updated_at: datetime
 
 
+class GroupInfo(BaseModel):
+    """Basic group information for wishlist items."""
+
+    id: UUID
+    name: str
+
+
 class WishlistItemInGroup(BaseModel):
     """Wishlist item as shown in group view."""
 
@@ -112,6 +119,7 @@ class WishlistItemInGroup(BaseModel):
     price: Decimal | None
     photo_url: str | None  # S3 URI (converted to presigned URL)
     rank: int
+    groups: list[GroupInfo]  # Include group assignments for editing
     created_at: datetime
     updated_at: datetime
     owner_name: str
@@ -124,8 +132,8 @@ class WishlistItemInGroup(BaseModel):
 class WishlistUserGroup(BaseModel):
     """Wishlist items grouped by user."""
 
-    userId: str
-    userName: str
+    user_id: str
+    user_name: str
     items: list[WishlistItemInGroup]
 
 
@@ -175,13 +183,6 @@ class WishlistItemReorderRequest(BaseModel):
     """Reorder wishlist items request."""
 
     items: list[dict[str, UUID | int]] = Field(..., min_length=1)
-
-
-class GroupInfo(BaseModel):
-    """Basic group information for wishlist items."""
-
-    id: UUID
-    name: str
 
 
 class WishlistItemResponse(WishlistItemBase):

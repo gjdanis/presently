@@ -67,10 +67,8 @@ class InvitationsService:
         invitation = self.repo.create_invitation(
             group_id=group_id,
             invited_by=user_id,
-            email=None,  # Multi-use invitations don't target specific email
             role=role,
             token=token,
-            is_multi_use=True,
             max_uses=max_uses,
             expires_at=expires_at,
         )
@@ -95,21 +93,11 @@ class InvitationsService:
         if not invitation:
             raise NotFoundError("Invitation not found")
 
-        # Get full invitation details to check multi-use status
+        # Get full invitation details to check status
         # Pass a placeholder UUID since this is a public endpoint (no authenticated user)
         invitation_details = self.repo.get_invitation_for_accept(None, token)
 
-        # For single-use invitations
-        if invitation_details and not invitation_details.is_multi_use:
-            # Check if already accepted
-            if invitation.accepted_at:
-                raise GoneError("This invitation has already been accepted")
-
-            # Check if expired
-            if invitation.expires_at and invitation.expires_at < datetime.now(UTC):
-                raise GoneError("This invitation has expired")
-
-        # For multi-use invitations, check status but don't reject
+        # Check status but don't reject (all invitations are multi-use)
         is_expired = False
         is_full = False
 
@@ -136,83 +124,48 @@ class InvitationsService:
         )
 
     def accept_invitation(self, user_id: str, token: str) -> InvitationAcceptResponse:
-        """Accept a group invitation (supports both single-use and multi-use)."""
+        """Accept a group invitation (all invitations are multi-use)."""
         # Get invitation details
         invitation = self.repo.get_invitation_for_accept(user_id, token)
 
         if not invitation:
             raise NotFoundError("Invitation not found")
 
-        # For multi-use invitations
-        if invitation.is_multi_use:
-            # Check if expired
-            if invitation.expires_at and invitation.expires_at < datetime.now(UTC):
-                raise GoneError("This invitation has expired")
+        # Check if expired
+        if invitation.expires_at and invitation.expires_at < datetime.now(UTC):
+            raise GoneError("This invitation has expired")
 
-            # Check if max uses reached
-            if invitation.max_uses and invitation.current_uses >= invitation.max_uses:
-                raise GoneError("This invitation has reached its maximum uses")
+        # Check if max uses reached
+        if invitation.max_uses and invitation.current_uses >= invitation.max_uses:
+            raise GoneError("This invitation has reached its maximum uses")
 
-            # Get invitation ID
-            invitation_id = self.repo.get_invitation_id_by_token(token)
-            if not invitation_id:
-                raise NotFoundError("Invitation not found")
+        # Get invitation ID
+        invitation_id = self.repo.get_invitation_id_by_token(token)
+        if not invitation_id:
+            raise NotFoundError("Invitation not found")
 
-            # Check if this specific user already accepted this invitation
-            if self.repo.has_user_accepted_invitation(str(invitation_id), user_id):
-                # User already used this link - just return success
-                return InvitationAcceptResponse(group_id=invitation.group_id, already_member=True)
+        # Check if this specific user already accepted this invitation
+        if self.repo.has_user_accepted_invitation(str(invitation_id), user_id):
+            # User already used this link - just return success
+            return InvitationAcceptResponse(group_id=invitation.group_id, already_member=True)
 
-            # Check if user is already a member (through different invitation)
-            group_id = str(invitation.group_id)
-            if self.repo.is_user_group_member(user_id, group_id):
-                # Record acceptance anyway for tracking
-                self.repo.record_invitation_acceptance(str(invitation_id), user_id)
-                return InvitationAcceptResponse(group_id=invitation.group_id, already_member=True)
-
-            # Add user to group
-            membership_id = self.repo.add_user_to_group(user_id, group_id, invitation.role)
-            if not membership_id:
-                raise BadRequestError("Failed to add user to group")
-
-            # Record acceptance and increment counter
+        # Check if user is already a member (through different invitation)
+        group_id = str(invitation.group_id)
+        if self.repo.is_user_group_member(user_id, group_id):
+            # Record acceptance anyway for tracking
             self.repo.record_invitation_acceptance(str(invitation_id), user_id)
-            self.repo.increment_invitation_uses(token)
+            return InvitationAcceptResponse(group_id=invitation.group_id, already_member=True)
 
-            return InvitationAcceptResponse(group_id=invitation.group_id, already_member=False)
+        # Add user to group
+        membership_id = self.repo.add_user_to_group(user_id, group_id, invitation.role)
+        if not membership_id:
+            raise BadRequestError("Failed to add user to group")
 
-        # For single-use (email-based) invitations
-        else:
-            # Check if already accepted
-            if invitation.accepted_at:
-                raise GoneError("This invitation has already been accepted")
+        # Record acceptance and increment counter
+        self.repo.record_invitation_acceptance(str(invitation_id), user_id)
+        self.repo.increment_invitation_uses(token)
 
-            # Check if expired
-            if invitation.expires_at and invitation.expires_at < datetime.now(UTC):
-                raise GoneError("This invitation has expired")
-
-            # Verify email matches (if user has email in profile)
-            if invitation.email and invitation.user_email and invitation.user_email != invitation.email:
-                raise ForbiddenError("This invitation was sent to a different email address")
-
-            group_id = str(invitation.group_id)
-            role = invitation.role
-
-            # Check if user is already a member
-            if self.repo.is_user_group_member(user_id, group_id):
-                # Mark invitation as accepted anyway
-                self.repo.mark_invitation_accepted(token)
-                return InvitationAcceptResponse(group_id=invitation.group_id, already_member=True)
-
-            # Add user to group
-            membership_id = self.repo.add_user_to_group(user_id, group_id, role)
-            if not membership_id:
-                raise BadRequestError("Failed to add user to group")
-
-            # Mark invitation as accepted
-            self.repo.mark_invitation_accepted(token)
-
-            return InvitationAcceptResponse(group_id=invitation.group_id, already_member=False)
+        return InvitationAcceptResponse(group_id=invitation.group_id, already_member=False)
 
     def get_active_invitations(self, user_id: str, group_id: str) -> list[dict]:
         """Get list of active multi-use invitations for a group (admin only)."""

@@ -9,6 +9,9 @@ from pydantic import BaseModel
 
 logger = setup_logger(__name__)
 
+# Sentinel value to distinguish "not provided" from "explicitly None"
+_NOT_PROVIDED = object()
+
 
 # Domain models
 class WishlistItemEntity(BaseModel):
@@ -91,10 +94,10 @@ class WishlistRepository:
         description: str | None = None,
         url: str | None = None,
         price: float | None = None,
-        photo_url: str | None = None,
+        photo_url: str | None | object = _NOT_PROVIDED,
         rank: int | None = None,
     ) -> WishlistItemEntity | None:
-        """Update wishlist item fields."""
+        """Update wishlist item fields. Use photo_url=None to clear the photo."""
         updates = []
         params: list = []
 
@@ -110,7 +113,7 @@ class WishlistRepository:
         if price is not None:
             updates.append("price = %s")
             params.append(price)
-        if photo_url is not None:
+        if photo_url is not _NOT_PROVIDED:  # Allow explicit None to clear the photo
             updates.append("photo_url = %s")
             params.append(photo_url)
         if rank is not None:

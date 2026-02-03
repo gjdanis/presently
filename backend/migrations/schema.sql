@@ -88,23 +88,33 @@ CREATE INDEX IF NOT EXISTS idx_purchases_item_id ON purchases(item_id);
 CREATE INDEX IF NOT EXISTS idx_purchases_purchased_by ON purchases(purchased_by);
 CREATE INDEX IF NOT EXISTS idx_purchases_group_id ON purchases(group_id);
 
--- Group Invitations
+-- Group Invitations (multi-use link-based invitations)
 CREATE TABLE IF NOT EXISTS group_invitations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
     invited_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    email TEXT NOT NULL,  -- Email of invitee (may not be registered yet)
     role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
     token TEXT NOT NULL UNIQUE,  -- Random token for invite link
-    accepted_at TIMESTAMPTZ,
-    expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(group_id, email)
+    max_uses INTEGER,  -- NULL = unlimited uses
+    current_uses INTEGER NOT NULL DEFAULT 0,  -- Track how many times link has been used
+    expires_at TIMESTAMPTZ,  -- NULL = never expires
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_group_invitations_token ON group_invitations(token);
-CREATE INDEX IF NOT EXISTS idx_group_invitations_email ON group_invitations(email);
 CREATE INDEX IF NOT EXISTS idx_group_invitations_group_id ON group_invitations(group_id);
+
+-- Track which users accepted which multi-use invitations
+CREATE TABLE IF NOT EXISTS invitation_acceptances (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invitation_id UUID NOT NULL REFERENCES group_invitations(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    accepted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(invitation_id, user_id)  -- Prevent same user accepting same invitation twice
+);
+
+CREATE INDEX IF NOT EXISTS idx_invitation_acceptances_invitation_id ON invitation_acceptances(invitation_id);
+CREATE INDEX IF NOT EXISTS idx_invitation_acceptances_user_id ON invitation_acceptances(user_id);
 
 -- ============================================================================
 -- TRIGGERS

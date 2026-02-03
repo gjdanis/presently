@@ -1,8 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { DeleteItemButton } from '@/components/DeleteItemButton'
 import { api } from '@/lib/api'
 import type { WishlistItem } from '@/lib/types'
@@ -26,10 +24,12 @@ import { CSS } from '@dnd-kit/utilities'
 
 function SortableItem({
   item,
-  onDelete
+  onDelete,
+  onEdit
 }: {
   item: WishlistItem
   onDelete: (itemId: string) => void
+  onEdit: (item: WishlistItem) => void
 }) {
   const {
     attributes,
@@ -73,8 +73,8 @@ function SortableItem({
           </svg>
         </button>
 
-        <Link
-          href={`/dashboard/wishlists/${item.id}/edit`}
+        <div
+          onClick={() => onEdit(item)}
           className="flex-1 min-w-0 cursor-pointer"
         >
           <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 break-words group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -113,7 +113,7 @@ function SortableItem({
               ))}
             </div>
           )}
-        </Link>
+        </div>
 
         <div className="flex-shrink-0">
           <DeleteItemButton
@@ -128,13 +128,14 @@ function SortableItem({
 
 export function DraggableWishlist({
   initialItems,
-  onReorder
+  onReorder,
+  onEditItem
 }: {
   initialItems: WishlistItem[]
   onReorder?: () => void
+  onEditItem?: (item: WishlistItem) => void
 }) {
   const [items, setItems] = useState(initialItems)
-  const router = useRouter()
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -189,7 +190,12 @@ export function DraggableWishlist({
       <SortableContext items={items} strategy={verticalListSortingStrategy}>
         <div className="space-y-4">
           {items.map((item) => (
-            <SortableItem key={item.id} item={item} onDelete={handleDelete} />
+            <SortableItem
+              key={item.id}
+              item={item}
+              onDelete={handleDelete}
+              onEdit={(item) => onEditItem?.(item)}
+            />
           ))}
         </div>
       </SortableContext>

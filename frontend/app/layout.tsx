@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   description: 'A multi-group wishlist application for families and friends to share gift ideas and secretly claim items for purchase.',
 };
 
+// Force dynamic rendering to prevent build-time errors with Cognito
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: {

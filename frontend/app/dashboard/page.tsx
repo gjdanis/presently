@@ -4,6 +4,9 @@ import { useAuth } from '@/lib/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { DashboardNav } from '@/components/DashboardNav'
+import { ItemDetailModal } from '@/components/ItemDetailModal'
+import { EditItemModal } from '@/components/EditItemModal'
+import { WishlistItemCard } from '@/components/WishlistItemCard'
 import Link from 'next/link'
 import { api } from '@/lib/api'
 import type { Group, WishlistItem } from '@/lib/types'
@@ -14,6 +17,8 @@ export default function DashboardPage() {
   const [groups, setGroups] = useState<Group[]>([])
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
   const [loadingData, setLoadingData] = useState(true)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -35,6 +40,7 @@ export default function DashboardPage() {
         api.getGroups(),
         api.getWishlist(),
       ])
+      console.log('Dashboard loaded wishlist items:', wishlistData.items)
       setGroups(groupsData.groups)
       setWishlistItems(wishlistData.items)
     } catch (error) {
@@ -173,53 +179,42 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {wishlistItems.map((item) => {
-                  const photoUrl = item.photoUrl || item.photo_url
-                  return (
-                    <div
-                      key={item.id}
-                      className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700 overflow-hidden"
-                    >
-                      <Link href={`/dashboard/wishlists/${item.id}/edit`}>
-                        {photoUrl && (
-                          <img
-                            src={photoUrl}
-                            alt={item.name}
-                            className="w-full h-48 object-cover"
-                          />
-                        )}
-                      </Link>
-                      <div className="p-4">
-                        <Link href={`/dashboard/wishlists/${item.id}/edit`}>
-                          <h3 className="font-semibold text-lg mb-1 text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{item.name}</h3>
-                        </Link>
-                        {item.price && (
-                          <p className="text-blue-600 dark:text-blue-400 font-medium mb-2">
-                            ${Number(item.price).toFixed(2)}
-                          </p>
-                        )}
-                        {item.groups && item.groups.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {item.groups.map((group) => (
-                              <Link
-                                key={group.id}
-                                href={`/dashboard/groups/${group.id}`}
-                                className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                              >
-                                {group.name}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                {wishlistItems.map((item) => (
+                  <WishlistItemCard
+                    key={item.id}
+                    item={item}
+                    onPhotoClick={() => setSelectedItem(item)}
+                    onEditClick={() => {
+                      console.log('Dashboard: Setting editing item:', item)
+                      setEditingItem(item)
+                    }}
+                    editMode={true}
+                  />
+                ))}
               </div>
             )}
           </div>
         </div>
       </main>
+
+      {/* Item Detail Modal */}
+      {selectedItem && (
+        <ItemDetailModal
+          item={selectedItem}
+          isOpen={!!selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+
+      {/* Edit Item Modal */}
+      {editingItem && (
+        <EditItemModal
+          item={editingItem}
+          isOpen={!!editingItem}
+          onClose={() => setEditingItem(null)}
+          onSaved={loadDashboardData}
+        />
+      )}
     </div>
   )
 }

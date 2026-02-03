@@ -33,7 +33,9 @@ help:
 	@echo "  make db-local-up    - Start local Postgres"
 	@echo "  make db-local-down  - Stop local Postgres"
 	@echo "  make seed           - Seed local database with test data"
-	@echo "  make db-migrate     - Run migrations on dev database"
+	@echo "  make db-migrate     - Run migrations on local database"
+	@echo "  make db-migrate-dev - Run migrations on dev database"
+	@echo "  make db-migrate-prod- Run migrations on prod database"
 	@echo ""
 	@echo "🚢 Deployment:"
 	@echo "  make deploy-dev     - Deploy to dev environment (AWS)"
@@ -115,8 +117,8 @@ test:
 	@echo "✅ All tests passed!"
 
 _test-integration:
-	@echo "🐳 Ensuring local database is running..."
-	@docker-compose -f docker-compose.local.yml up -d
+	@echo "🐳 Ensuring database is running..."
+	@docker-compose up -d
 	@sleep 2
 	@echo "▶ Running integration tests..."
 	@$(PYTHON) -m pytest $(BACKEND_DIR)/tests/integration -v
@@ -194,11 +196,11 @@ backend:
 # ============================================================================
 
 db-local-up:
-	@echo "🐳 Starting local Postgres database..."
-	@docker-compose -f docker-compose.local.yml up -d
+	@echo "🐳 Starting Postgres database..."
+	@docker-compose up -d
 	@echo "⏳ Waiting for database to be ready..."
 	@sleep 5
-	@echo "✅ Local database is ready!"
+	@echo "✅ Database is ready!"
 	@echo ""
 	@echo "📋 Connection details:"
 	@echo "   Host: localhost"
@@ -213,11 +215,11 @@ db-local-up:
 	@echo "💡 Next: Run 'make seed' to add test data"
 
 db-local-down:
-	@echo "🛑 Stopping local database..."
-	@docker-compose -f docker-compose.local.yml down
-	@echo "✅ Local database stopped"
+	@echo "🛑 Stopping database..."
+	@docker-compose down
+	@echo "✅ Database stopped"
 	@echo ""
-	@echo "💡 Data is persisted. Run 'docker-compose -f docker-compose.local.yml down -v' to delete data"
+	@echo "💡 Data is persisted. Run 'docker-compose down -v' to delete data"
 
 seed:
 	@echo "🌱 Seeding local database with test data..."
@@ -225,13 +227,32 @@ seed:
 		$(PYTHON) $(BACKEND_DIR)/scripts/seed_local.py
 
 db-migrate:
+	@echo "🗃️  Running database migrations on local environment..."
+	@DATABASE_URL=postgresql://presently:presently_local@localhost:5433/presently_local \
+		psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
+	@echo "✅ Migrations complete!"
+
+db-migrate-dev:
 	@echo "🗃️  Running database migrations on dev environment..."
-	@if [ ! -f ".env.local" ]; then \
-		echo "❌ .env.local not found"; \
-		echo "   Copy .env.local.example to .env.local and configure"; \
+	@if [ ! -f ".env.development" ]; then \
+		echo "❌ .env.development not found"; \
+		echo "   Copy .env.local.example to .env.development and configure"; \
 		exit 1; \
 	fi
-	@export $$(cat .env.local | grep -v '^#' | grep -v '^$$' | xargs) && \
+	@export $$(cat .env.development | grep -v '^#' | grep -v '^$$' | xargs) && \
+		psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
+	@echo "✅ Migrations complete!"
+
+db-migrate-prod:
+	@echo "🗃️  Running database migrations on PRODUCTION environment..."
+	@echo "⚠️  This will modify the production database. Press Ctrl+C to cancel."
+	@sleep 3
+	@if [ ! -f ".env.production" ]; then \
+		echo "❌ .env.production not found"; \
+		echo "   Copy .env.production.example to .env.production and configure"; \
+		exit 1; \
+	fi
+	@export $$(cat .env.production | grep -v '^#' | grep -v '^$$' | xargs) && \
 		psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
 	@echo "✅ Migrations complete!"
 

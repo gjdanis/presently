@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  postgres-local:
+  postgres:
     image: postgres:15-alpine
-    container_name: presently-local-db
+    container_name: presently-db
     environment:
       POSTGRES_USER: presently
       POSTGRES_PASSWORD: presently_local
@@ -12,7 +12,7 @@ services:
       - "5433:5432"
     volumes:
       - ./backend/migrations/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-      - presently_local_data:/var/lib/postgresql/data
+      - presently_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U presently -d presently_local"]
       interval: 5s
@@ -20,4 +20,4 @@ services:
       retries: 5
 
 volumes:
-  presently_local_data:
+  presently_data:

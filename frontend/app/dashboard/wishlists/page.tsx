@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { DashboardNav } from '@/components/DashboardNav'
 import { DraggableWishlist } from '@/components/DraggableWishlist'
+import { EditItemModal } from '@/components/EditItemModal'
 import { api } from '@/lib/api'
 import type { WishlistItem } from '@/lib/types'
 
@@ -14,6 +15,7 @@ export default function WishlistsPage() {
   const router = useRouter()
   const [items, setItems] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -80,10 +82,24 @@ export default function WishlistsPage() {
               </Link>
             </div>
           ) : (
-            <DraggableWishlist initialItems={items} onReorder={loadWishlist} />
+            <DraggableWishlist
+              initialItems={items}
+              onReorder={loadWishlist}
+              onEditItem={(item) => setEditingItem(item)}
+            />
           )}
         </div>
       </main>
+
+      {/* Edit Item Modal */}
+      {editingItem && (
+        <EditItemModal
+          item={editingItem}
+          isOpen={!!editingItem}
+          onClose={() => setEditingItem(null)}
+          onSaved={loadWishlist}
+        />
+      )}
     </div>
   )
 }

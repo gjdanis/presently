@@ -8,8 +8,10 @@ import { DashboardNav } from '@/components/DashboardNav'
 import { PurchaseButton } from '@/components/PurchaseButton'
 import { InviteMemberModal } from '@/components/InviteMemberModal'
 import { ItemDetailModal } from '@/components/ItemDetailModal'
+import { EditItemModal } from '@/components/EditItemModal'
+import { WishlistItemCard } from '@/components/WishlistItemCard'
 import { api } from '@/lib/api'
-import type { GroupDetail } from '@/lib/types'
+import type { GroupDetail, WishlistItem } from '@/lib/types'
 
 export default function GroupDetailPage() {
   const { isAuthenticated, isLoading, profile } = useAuth()
@@ -22,6 +24,7 @@ export default function GroupDetailPage() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [hidePurchased, setHidePurchased] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -43,7 +46,7 @@ export default function GroupDetailPage() {
 
       // Auto-select first member if there are members
       if (data.members && data.members.length > 0 && !selectedMemberId) {
-        const firstMemberId = data.members[0].userId || data.members[0].user_id
+        const firstMemberId = data.members[0].user_id
         setSelectedMemberId(firstMemberId)
       }
     } catch (error) {
@@ -69,15 +72,13 @@ export default function GroupDetailPage() {
     return null
   }
 
-  // Handle both userId (camelCase from type) and user_id (snake_case from API)
-  const currentUserMember = groupData.members.find(m =>
-    (m as any).userId === profile.id || (m as any).user_id === profile.id
-  )
+  // Find current user's membership
+  const currentUserMember = groupData.members.find(m => m.user_id === profile.id)
   const isAdmin = currentUserMember?.role === 'admin'
 
   // Get selected wishlist or null
   const selectedWishlist = selectedMemberId
-    ? groupData.wishlists.find((w: any) => (w.userId || w.user_id) === selectedMemberId)
+    ? groupData.wishlists.find((w: any) => w.user_id === selectedMemberId)
     : null
 
   return (
@@ -136,7 +137,7 @@ export default function GroupDetailPage() {
             </h2>
             <div className="flex flex-wrap gap-2">
               {groupData.members.map((member: any) => {
-                const memberId = member.userId || member.user_id
+                const memberId = member.user_id
                 const isCurrentUser = memberId === profile.id
                 const isSelected = memberId === selectedMemberId
                 return (
@@ -179,7 +180,7 @@ export default function GroupDetailPage() {
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    {(selectedWishlist.userName || selectedWishlist.user_name)}'s Wishlist
+                    {selectedWishlist.user_name}'s Wishlist
                   </h3>
                   {/* Only show toggle if viewing someone else's wishlist */}
                   {selectedMemberId !== profile.id && (
@@ -213,81 +214,37 @@ export default function GroupDetailPage() {
                         if (selectedMemberId === profile.id || !hidePurchased) {
                           return true
                         }
-                        const isPurchased = item.is_purchased || item.isPurchased || false
+                        const isPurchased = item.is_purchased || false
                         return !isPurchased
                       })
                       .map((item: any) => {
-                      const photoUrl = item.photoUrl || item.photo_url
-                      const itemOwnerId = item.userId || item.user_id
+                      const itemOwnerId = item.user_id
                       const isOwnItem = itemOwnerId === profile.id
 
                       // Purchase status (only visible to non-owners)
-                      const isPurchased = item.is_purchased || item.isPurchased || false
-                      const purchasedById = item.purchased_by || item.purchasedBy
+                      const isPurchased = item.is_purchased || false
+                      const purchasedById = item.purchased_by
                       const purchasedByMe = !isOwnItem && purchasedById === profile.id
 
                       // Find purchaser's name if item is purchased
                       let purchasedByName: string | undefined
                       if (isPurchased && !isOwnItem && purchasedById) {
                         const purchaser = groupData.members.find((m: any) =>
-                          (m.userId || m.user_id) === purchasedById
+                          m.user_id === purchasedById
                         )
                         purchasedByName = purchaser?.name
                       }
 
                       return (
-                        <div
+                        <WishlistItemCard
                           key={item.id}
-                          className={`border rounded-lg p-4 flex flex-col h-full transition-colors duration-200 ${
-                            purchasedByMe
-                              ? 'border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-                              : 'border-gray-200 dark:border-gray-700'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex-1">{item.name}</h4>
-                            {photoUrl && (
-                              <button
-                                onClick={() => setSelectedItem(item)}
-                                className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                                title="View details"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-
-                          {item.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                              {item.description}
-                            </p>
-                          )}
-
-                          {item.price && (
-                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mb-3">
-                              ${Number(item.price).toFixed(2)}
-                            </p>
-                          )}
-
-                          {item.url && (
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-3 inline-flex items-center"
-                            >
-                              View Product
-                              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
-                            </a>
-                          )}
-
-                          {/* Only show purchase button if not the item owner */}
-                          {!isOwnItem && (
-                            <div className="mt-auto pt-3">
+                          item={item}
+                          onPhotoClick={() => setSelectedItem(item)}
+                          onEditClick={isOwnItem ? () => setEditingItem(item as WishlistItem) : undefined}
+                          editMode={isOwnItem}
+                          highlightPurchased={purchasedByMe}
+                          actionButton={
+                            !isOwnItem ? (
                               <PurchaseButton
                                 itemId={item.id}
                                 groupId={groupId}
@@ -299,9 +256,9 @@ export default function GroupDetailPage() {
                                   // For now, the PurchaseButton handles its own state
                                 }}
                               />
-                            </div>
-                          )}
-                        </div>
+                            ) : undefined
+                          }
+                        />
                       )
                     })}
                   </div>
@@ -326,6 +283,16 @@ export default function GroupDetailPage() {
           item={selectedItem}
           isOpen={!!selectedItem}
           onClose={() => setSelectedItem(null)}
+        />
+      )}
+
+      {/* Edit Item Modal */}
+      {editingItem && (
+        <EditItemModal
+          item={editingItem}
+          isOpen={!!editingItem}
+          onClose={() => setEditingItem(null)}
+          onSaved={loadGroup}
         />
       )}
     </div>

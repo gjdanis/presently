@@ -27,9 +27,6 @@ def test_create_multi_use_invitation_basic(
         role="member",
     )
 
-    assert result.added_directly is False
-    assert result.email_sent is False
-    assert result.user_exists is False
     assert result.invite_url.startswith("https://")
     assert "/invite/" in result.invite_url
     assert result.max_uses is None  # Unlimited
@@ -269,10 +266,8 @@ def test_accept_invitation_expired(
     repo.create_invitation(
         group_id=sample_group["id"],
         invited_by=sample_profile["id"],
-        email=None,
         role="member",
         token=token,
-        is_multi_use=True,
         max_uses=None,
         expires_at=expired_time,
     )

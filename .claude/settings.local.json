@@ -22,7 +22,12 @@
       "Bash(ruff check:*)",
       "Bash(find:*)",
       "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest backend/tests/integration/test_groups_service.py::test_get_group_detail -v)",
-      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest backend/tests/integration/test_invitations_service.py -v)"
+      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest backend/tests/integration/test_invitations_service.py -v)",
+      "Bash(python3:*)",
+      "Bash(PHOTOS_BUCKET=\"presently-photos-dev-us-east-1-479453697367\" ENVIRONMENT=\"local\" python main.py)",
+      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest tests/integration/test_groups_service.py::test_get_group_detail -v)",
+      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest tests/integration/test_groups_service.py -v)",
+      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest tests/integration/test_groups_service.py::test_get_group_detail_with_items -v)"
     ],
     "deny": [],
     "ask": []

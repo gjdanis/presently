@@ -71,8 +71,44 @@ def test_get_group_detail(
     assert detail.members[0].role == "admin"
     # Should have wishlist for the one member (even if empty)
     assert len(detail.wishlists) == 1
-    assert detail.wishlists[0].userId == sample_profile["id"]
+    assert detail.wishlists[0].user_id == sample_profile["id"]
     assert detail.wishlists[0].items == []
+
+
+def test_get_group_detail_with_items(
+    clean_db: Any, sample_profile: dict[str, Any], sample_group: dict[str, Any], groups_service: GroupsService
+):
+    """Test getting group details with wishlist items includes groups field."""
+    # Create a wishlist item and assign it to the group
+    cursor = clean_db.cursor()
+    cursor.execute(
+        """
+        INSERT INTO wishlist_items (id, user_id, name, rank)
+        VALUES (gen_random_uuid(), %s, %s, 0)
+        RETURNING id
+        """,
+        (sample_profile["id"], "Test Item")
+    )
+    item_id = cursor.fetchone()[0]
+
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (item_id, sample_group["id"])
+    )
+    clean_db.commit()
+    cursor.close()
+
+    # Get group details
+    detail = groups_service.get_group_detail(sample_profile["id"], sample_group["id"])
+
+    # Verify item includes groups field
+    assert len(detail.wishlists) == 1
+    assert len(detail.wishlists[0].items) == 1
+    item = detail.wishlists[0].items[0]
+    assert item.name == "Test Item"
+    assert len(item.groups) == 1
+    assert str(item.groups[0].id) == sample_group["id"]
+    assert item.groups[0].name == sample_group["name"]
 
 
 def test_get_group_detail_forbidden(

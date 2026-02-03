@@ -68,7 +68,6 @@ class InvitationAcceptEntity(BaseModel):
     accepted_at: datetime | None
     expires_at: datetime | None
     user_email: str | None
-    is_multi_use: bool
     max_uses: int | None
     current_uses: int
 
@@ -138,22 +137,20 @@ class InvitationsRepository:
         self,
         group_id: str,
         invited_by: str,
-        email: str | None,
         role: str,
         token: str,
-        is_multi_use: bool = False,
         max_uses: int | None = None,
         expires_at: datetime | None = None,
     ) -> InvitationCreateResult | None:
-        """Create a new invitation (supports both single-use and multi-use)."""
+        """Create a new invitation (all invitations are now multi-use)."""
         query = """
             INSERT INTO group_invitations
-            (group_id, invited_by, email, role, token, is_multi_use, max_uses, expires_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            (group_id, invited_by, role, token, max_uses, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id, token
         """
         result = execute_insert(
-            query, (group_id, invited_by, email, role, token, is_multi_use, max_uses, expires_at)
+            query, (group_id, invited_by, role, token, max_uses, expires_at)
         )
         return InvitationCreateResult(**result) if result else None
 
@@ -161,7 +158,7 @@ class InvitationsRepository:
         """Get invitation details by token."""
         query = """
             SELECT gi.group_id, g.name as group_name, g.description as group_description,
-                   gi.role, gi.expires_at, gi.accepted_at,
+                   gi.role, gi.expires_at, NULL::timestamptz as accepted_at,
                    p.name as inviter_name, p.email as inviter_email
             FROM group_invitations gi
             JOIN groups g ON gi.group_id = g.id
@@ -174,10 +171,10 @@ class InvitationsRepository:
     def get_invitation_for_accept(
         self, user_id: str | None, token: str
     ) -> InvitationAcceptEntity | None:
-        """Get invitation details for accepting (with user email check)."""
+        """Get invitation details for accepting (multi-use invitations)."""
         query = """
-            SELECT gi.group_id, gi.email, gi.role, gi.accepted_at, gi.expires_at,
-                   p.email as user_email, gi.is_multi_use, gi.max_uses, gi.current_uses
+            SELECT gi.group_id, NULL::text as email, gi.role, NULL::timestamptz as accepted_at, gi.expires_at,
+                   p.email as user_email, gi.max_uses, gi.current_uses
             FROM group_invitations gi
             LEFT JOIN profiles p ON p.id = %s::uuid
             WHERE gi.token = %s
@@ -266,12 +263,11 @@ class InvitationsRepository:
         """Get all active (not fully used/expired) invitations for a group."""
         query = """
             SELECT gi.id, gi.token, gi.created_at, gi.expires_at,
-                   gi.max_uses, gi.current_uses, gi.is_multi_use,
+                   gi.max_uses, gi.current_uses,
                    p.name as created_by_name
             FROM group_invitations gi
             JOIN profiles p ON gi.invited_by = p.id
             WHERE gi.group_id = %s
-              AND gi.is_multi_use = TRUE
               AND (gi.max_uses IS NULL OR gi.current_uses < gi.max_uses)
               AND (gi.expires_at IS NULL OR gi.expires_at > NOW())
             ORDER BY gi.created_at DESC

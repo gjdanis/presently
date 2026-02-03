@@ -4,6 +4,7 @@ from common.logger import setup_logger
 from common.models import (
     GroupBasicInfo,
     GroupDetailResponse,
+    GroupInfo,
     GroupMemberResponse,
     GroupResponse,
     WishlistItemInGroup,
@@ -11,6 +12,7 @@ from common.models import (
 )
 from common.s3_utils import s3_uri_to_presigned_url
 from repositories.groups_repository import GroupsRepository
+from repositories.wishlist_repository import WishlistRepository
 
 logger = setup_logger(__name__)
 
@@ -36,9 +38,14 @@ class BadRequestError(Exception):
 class GroupsService:
     """Service for groups business logic."""
 
-    def __init__(self, repository: GroupsRepository | None = None):
+    def __init__(
+        self,
+        repository: GroupsRepository | None = None,
+        wishlist_repo: WishlistRepository | None = None,
+    ):
         """Initialize service with repository."""
         self.repo = repository or GroupsRepository()
+        self.wishlist_repo = wishlist_repo or WishlistRepository()
 
     def get_user_groups(self, user_id: str) -> list[GroupResponse]:
         """Get all groups for a user."""
@@ -115,6 +122,9 @@ class GroupsService:
             # Convert S3 URI to presigned URL
             photo_url = s3_uri_to_presigned_url(item.photo_url) if item.photo_url else None
 
+            # Get groups for this item
+            item_groups = self.wishlist_repo.get_item_groups(str(item.id))
+
             wishlists_by_user[owner_id].append(
                 {
                     "id": item.id,
@@ -125,6 +135,9 @@ class GroupsService:
                     "price": item.price,
                     "photo_url": photo_url,
                     "rank": item.rank,
+                    "groups": [
+                        GroupInfo(id=g.id, name=g.name) for g in item_groups
+                    ],
                     "created_at": item.created_at,
                     "updated_at": item.updated_at,
                     "owner_name": item.owner_name,
@@ -138,8 +151,8 @@ class GroupsService:
         # Format wishlists response
         wishlists = [
             WishlistUserGroup(
-                userId=str(member.user_id),
-                userName=member.name,
+                user_id=str(member.user_id),
+                user_name=member.name,
                 items=[
                     WishlistItemInGroup(**item)
                     for item in wishlists_by_user.get(str(member.user_id), [])

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { api } from '@/lib/api'
 
 type ImageUploadProps = {
@@ -12,6 +12,11 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Update preview when currentImageUrl prop changes
+  useEffect(() => {
+    setPreview(currentImageUrl || null)
+  }, [currentImageUrl])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
