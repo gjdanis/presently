@@ -179,12 +179,6 @@ class WishlistItemUpdate(BaseModel):
     rank: int | None = Field(None, ge=0)
 
 
-class WishlistItemReorderRequest(BaseModel):
-    """Reorder wishlist items request."""
-
-    items: list[dict[str, UUID | int]] = Field(..., min_length=1)
-
-
 class WishlistItemResponse(WishlistItemBase):
     """Wishlist item response."""
 
@@ -196,13 +190,6 @@ class WishlistItemResponse(WishlistItemBase):
     updated_at: datetime
     is_purchased: bool | None = None  # Only visible to non-owners
     purchased_by: UUID | None = None  # Only visible to non-owners
-
-
-class WishlistItemWithOwner(WishlistItemResponse):
-    """Wishlist item with owner info (for group views)."""
-
-    owner_name: str
-    owner_email: EmailStr
 
 
 # ============================================================================
@@ -283,12 +270,6 @@ class InvitationCreateResponse(BaseModel):
 # ============================================================================
 
 
-class PhotoUploadResponse(BaseModel):
-    """Photo upload response."""
-
-    url: HttpUrl
-
-
 class PresignedUrlResponse(BaseModel):
     """Presigned URL response for photo upload."""
 
@@ -296,20 +277,6 @@ class PresignedUrlResponse(BaseModel):
     fields: dict
     file_url: str  # S3 URI for database storage
     preview_url: str  # HTTP URL for immediate display
-
-
-# ============================================================================
-# Link Preview Models
-# ============================================================================
-
-
-class LinkPreviewResponse(BaseModel):
-    """Link preview response."""
-
-    title: str | None = None
-    description: str | None = None
-    image: HttpUrl | None = None
-    price: str | None = None
 
 
 # ============================================================================
