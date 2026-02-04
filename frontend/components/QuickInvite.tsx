@@ -28,7 +28,7 @@ export function QuickInvite({ groupId }: QuickInviteProps) {
       setInviteUrl(frontendUrl)
       setIsGenerating(false)
     } catch (err: any) {
-      console.error('Error generating invitation:', err)
+      if (process.env.NODE_ENV === 'development') console.error('Error generating invitation:', err)
       setError(err.message || 'Failed to generate invitation link')
       setIsGenerating(false)
     }
@@ -54,7 +54,7 @@ export function QuickInvite({ groupId }: QuickInviteProps) {
         <button
           onClick={handleGenerateLink}
           disabled={isGenerating}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? 'Generating...' : 'Generate Link'}
         </button>
@@ -78,7 +78,7 @@ export function QuickInvite({ groupId }: QuickInviteProps) {
               <button
                 type="button"
                 onClick={() => copyToClipboard(inviteUrl)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded font-medium transition-all"
+                className="px-4 py-2 bg-primary text-primary-foreground text-sm rounded font-medium hover:opacity-90 transition-opacity"
               >
                 {copied ? '✓ Copied!' : 'Copy'}
               </button>

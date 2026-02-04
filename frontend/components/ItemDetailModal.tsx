@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { WishlistItem } from '@/lib/types'
 
 type ItemDetailModalProps = {
@@ -12,14 +12,24 @@ type ItemDetailModalProps = {
 export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
-  // Reset loading state when modal opens or item changes
   useEffect(() => {
     if (isOpen) {
       setImageLoaded(false)
       setImageError(false)
+      closeButtonRef.current?.focus()
     }
   }, [isOpen, item])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
@@ -42,7 +52,10 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
               {item.name}
             </h2>
             <button
+              ref={closeButtonRef}
+              type="button"
               onClick={onClose}
+              aria-label="Close"
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +116,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
                 >
                   View Product
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

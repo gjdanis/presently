@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { DashboardNav } from '@/components/DashboardNav'
 import { RemoveMemberButton } from '@/components/RemoveMemberButton'
 import { AddMemberForm } from '@/components/AddMemberForm'
+import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
 import type { GroupDetail } from '@/lib/types'
 
@@ -18,6 +19,8 @@ export default function ManageGroupPage() {
   const [groupData, setGroupData] = useState<GroupDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -47,7 +50,7 @@ export default function ManageGroupPage() {
 
       setGroupData(data)
     } catch (error) {
-      console.error('Error loading group:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading group:', error)
       router.push('/dashboard/groups')
     } finally {
       setLoading(false)
@@ -55,28 +58,38 @@ export default function ManageGroupPage() {
   }
 
   const handleDeleteGroup = async () => {
-    if (!confirm(`Are you sure you want to delete "${groupData?.group.name}"? This action cannot be undone.`)) {
-      return
-    }
-
     setDeleting(true)
     try {
       await api.deleteGroup(groupId)
+      setShowDeleteConfirm(false)
       router.push('/dashboard/groups')
     } catch (error) {
-      console.error('Error deleting group:', error)
-      alert('Failed to delete group')
+      if (process.env.NODE_ENV === 'development') console.error('Error deleting group:', error)
+      setDeleteError('Failed to delete group')
+    } finally {
       setDeleting(false)
     }
   }
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <DashboardNav userName={profile?.name || 'User'} />
+        <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <div className="h-8 w-64 bg-muted rounded animate-pulse mb-6" />
+            <div className="bg-card rounded-lg shadow p-6 animate-pulse space-y-4">
+              <div className="h-6 bg-muted rounded w-1/3" />
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-14 bg-muted rounded" />
+              ))}
+            </div>
+            <div className="bg-card rounded-lg shadow p-6 mt-6 animate-pulse">
+              <div className="h-6 bg-muted rounded w-1/4 mb-4" />
+              <div className="h-10 bg-muted rounded w-32" />
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -175,41 +188,29 @@ export default function ManageGroupPage() {
             <p className="text-red-700 dark:text-red-300 mb-4 text-sm">
               Once you delete a group, there is no going back. All wishlist associations will be removed.
             </p>
+            {deleteError && (
+              <p className="text-red-600 dark:text-red-400 text-sm mb-4">{deleteError}</p>
+            )}
             <button
-              onClick={handleDeleteGroup}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleting}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {deleting ? (
-                <>
-                  <svg
-                    className="w-5 h-5 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Deleting...
-                </>
-              ) : (
-                'Delete Group'
-              )}
+              Delete Group
             </button>
           </div>
         </div>
       </main>
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteGroup}
+        title="Delete group"
+        message={`Are you sure you want to delete "${groupData?.group.name}"? This action cannot be undone.`}
+        confirmLabel="Delete Group"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   )
 }

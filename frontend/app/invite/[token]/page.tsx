@@ -33,7 +33,7 @@ export default function InvitePage({ params }: InvitePageProps) {
         setInvitation(invitationData);
         setLoading(false);
       } catch (err: any) {
-        console.error('Error loading invitation:', err);
+        if (process.env.NODE_ENV === 'development') console.error('Error loading invitation:', err);
         setError(err.message || 'Failed to load invitation. The invitation may be invalid or expired.');
         setLoading(false);
       }
@@ -69,7 +69,7 @@ export default function InvitePage({ params }: InvitePageProps) {
         router.push(`/dashboard/groups/${result.group_id}`);
       }, 2000);
     } catch (err: any) {
-      console.error('Error accepting invitation:', err);
+      if (process.env.NODE_ENV === 'development') console.error('Error accepting invitation:', err);
       setError(err.message || 'Failed to accept invitation');
       setAccepting(false);
     }
@@ -99,7 +99,7 @@ export default function InvitePage({ params }: InvitePageProps) {
           <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
           <Link
             href="/auth/login"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+            className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
           >
             Go to Login
           </Link>
@@ -150,7 +150,7 @@ export default function InvitePage({ params }: InvitePageProps) {
           {!error && !accepting && (
             <Link
               href={`/dashboard/groups/${invitation?.group_id}`}
-              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+              className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
             >
               Go to Group
             </Link>
@@ -209,7 +209,7 @@ export default function InvitePage({ params }: InvitePageProps) {
             // If authenticated, show manual accept button (in case auto-accept didn't work)
             <button
               onClick={acceptInvitation}
-              className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700"
+              className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium text-center hover:opacity-90"
             >
               Accept Invitation
             </button>
@@ -217,7 +217,7 @@ export default function InvitePage({ params }: InvitePageProps) {
             <>
               <Link
                 href={`/auth/register?invite=${token}`}
-                className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700"
+                className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium text-center hover:opacity-90"
               >
                 Sign Up & Join Group
               </Link>

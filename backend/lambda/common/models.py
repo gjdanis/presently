@@ -185,6 +185,19 @@ class WishlistItemResponse(WishlistItemBase):
     purchased_by: UUID | None = None  # Only visible to non-owners
 
 
+class WishlistReorderItem(BaseModel):
+    """Item rank update for reordering."""
+
+    id: UUID
+    rank: int = Field(..., ge=0)
+
+
+class WishlistReorderRequest(BaseModel):
+    """Reorder request with list of items."""
+
+    items: list[WishlistReorderItem]
+
+
 # ============================================================================
 # Purchase Models
 # ============================================================================

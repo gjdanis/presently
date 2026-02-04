@@ -34,7 +34,7 @@ export default function WishlistsPage() {
       const data = await api.getWishlist()
       setItems(data.items)
     } catch (error) {
-      console.error('Error loading wishlist:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading wishlist:', error)
     } finally {
       setLoading(false)
     }
@@ -42,8 +42,25 @@ export default function WishlistsPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-300">Loading...</div>
+      <div className="min-h-screen bg-background">
+        <DashboardNav userName={profile?.name || 'User'} />
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <div className="flex justify-between items-center mb-6">
+              <div className="h-9 w-48 bg-muted rounded animate-pulse" />
+              <div className="h-10 w-28 bg-muted rounded-lg animate-pulse" />
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-lg shadow p-6 animate-pulse">
+                  <div className="h-40 bg-muted rounded mb-4" />
+                  <div className="h-6 bg-muted rounded w-3/4 mb-2" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -62,7 +79,7 @@ export default function WishlistsPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Wishlist</h1>
             <Link
               href="/dashboard/wishlists/new"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
             >
               Add Item
             </Link>

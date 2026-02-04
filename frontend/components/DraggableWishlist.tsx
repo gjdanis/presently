@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DeleteItemButton } from '@/components/DeleteItemButton'
 import { api } from '@/lib/api'
 import type { WishlistItem } from '@/lib/types'
@@ -136,6 +136,11 @@ export function DraggableWishlist({
   onEditItem?: (item: WishlistItem) => void
 }) {
   const [items, setItems] = useState(initialItems)
+  const [reorderMessage, setReorderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -171,13 +176,19 @@ export function DraggableWishlist({
 
       await api.reorderItems(updates)
 
+      // Show success message
+      setReorderMessage({ type: 'success', text: 'Order saved' })
+      setTimeout(() => setReorderMessage(null), 3000)
+
       if (onReorder) {
         onReorder()
       }
     } catch (error) {
-      console.error('Error reordering items:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error reordering items:', error)
       // Revert on error
       setItems(initialItems)
+      setReorderMessage({ type: 'error', text: 'Failed to save order' })
+      setTimeout(() => setReorderMessage(null), 5000)
     }
   }
 
@@ -188,6 +199,17 @@ export function DraggableWishlist({
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={items} strategy={verticalListSortingStrategy}>
+        {reorderMessage && (
+          <p
+            className={`text-sm mb-4 px-4 py-2 rounded-lg ${
+              reorderMessage.type === 'success'
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+            }`}
+          >
+            {reorderMessage.text}
+          </p>
+        )}
         <div className="space-y-4">
           {items.map((item) => (
             <SortableItem

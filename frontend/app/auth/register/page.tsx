@@ -63,7 +63,7 @@ function RegisterForm() {
 
       setLoading(false);
     } catch (err: any) {
-      console.error('Registration error:', err);
+      if (process.env.NODE_ENV === 'development') console.error('Registration error:', err);
       setError(err.message || 'Failed to create account');
       setLoading(false);
     }
@@ -91,7 +91,7 @@ function RegisterForm() {
         }
       }, 1500);
     } catch (err: any) {
-      console.error('Confirmation error:', err);
+      if (process.env.NODE_ENV === 'development') console.error('Confirmation error:', err);
       setError(err.message || 'Invalid confirmation code');
       setConfirmingCode(false);
     }
@@ -154,7 +154,7 @@ function RegisterForm() {
                 required
                 value={confirmationCode}
                 onChange={(e) => setConfirmationCode(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-center text-2xl tracking-widest"
+                className="mt-1 block input text-center text-2xl tracking-widest"
                 placeholder="123456"
                 maxLength={6}
               />
@@ -166,7 +166,7 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={confirmingCode}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+              className="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50"
             >
               {confirmingCode ? 'Verifying...' : 'Verify Email'}
             </button>
@@ -214,7 +214,7 @@ function RegisterForm() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input mt-1"
               />
             </div>
             <div>
@@ -229,7 +229,7 @@ function RegisterForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input mt-1"
               />
             </div>
             <div>
@@ -244,7 +244,7 @@ function RegisterForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input mt-1"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Must be at least 8 characters with uppercase, lowercase, number, and symbol
@@ -262,7 +262,7 @@ function RegisterForm() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input mt-1"
               />
             </div>
           </div>
@@ -270,7 +270,7 @@ function RegisterForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+            className="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>

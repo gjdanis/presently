@@ -7,6 +7,7 @@ from common.models import (
     WishlistItemCreate,
     WishlistItemResponse,
     WishlistItemUpdate,
+    WishlistReorderRequest,
 )
 from dependencies.auth import get_current_user
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -58,6 +59,26 @@ async def create_wishlist_item(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
+@router.put("/reorder")
+async def reorder_wishlist_items(
+    reorder_data: WishlistReorderRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    service: WishlistService = Depends(get_wishlist_service),
+):
+    """Reorder wishlist items by updating rank values."""
+    user_id = str(current_user.sub)
+    # Convert Pydantic models to dicts for service layer
+    items = [{"id": str(item.id), "rank": item.rank} for item in reorder_data.items]
+
+    try:
+        service.reorder_items(user_id, items)
+        return {"success": True}
+    except ForbiddenError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
+    except BadRequestError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+
 @router.get("/{item_id}", response_model=WishlistItemResponse)
 async def get_wishlist_item(
     item_id: UUID,
@@ -101,25 +122,6 @@ async def update_wishlist_item(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-
-
-@router.put("/reorder")
-async def reorder_wishlist_items(
-    reorder_data: dict[str, list[dict]],
-    current_user: AuthenticatedUser = Depends(get_current_user),
-    service: WishlistService = Depends(get_wishlist_service),
-):
-    """Reorder wishlist items by updating rank values."""
-    user_id = str(current_user.sub)
-    items = reorder_data.get("items", [])
-
-    try:
-        service.reorder_items(user_id, items)
-        return {"success": True}
-    except ForbiddenError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
-    except BadRequestError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

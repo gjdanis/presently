@@ -59,7 +59,7 @@ export default function NewGroupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Smith Family, Work Friends"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               />
             </div>
 
@@ -73,7 +73,7 @@ export default function NewGroupPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="A brief description of this group..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               />
             </div>
 
@@ -81,7 +81,7 @@ export default function NewGroupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+                className="flex-1 py-2 px-4 bg-primary text-primary-foreground rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50"
               >
                 {loading ? 'Creating...' : 'Create Group'}
               </button>

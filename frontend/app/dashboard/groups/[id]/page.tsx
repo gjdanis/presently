@@ -50,7 +50,7 @@ export default function GroupDetailPage() {
         setSelectedMemberId(firstMemberId)
       }
     } catch (error) {
-      console.error('Error loading group:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading group:', error)
       router.push('/dashboard/groups')
     } finally {
       setLoading(false)
@@ -59,11 +59,31 @@ export default function GroupDetailPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <DashboardNav userName={profile?.name || 'User'} />
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <div className="h-8 w-48 bg-muted rounded animate-pulse mb-6" />
+            <div className="flex gap-4 mb-6">
+              <div className="h-10 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-10 w-24 bg-muted rounded animate-pulse" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-card rounded-lg shadow p-6 animate-pulse space-y-3">
+                <div className="h-5 bg-muted rounded w-1/3" />
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 bg-muted rounded" />
+                ))}
+              </div>
+              <div className="bg-card rounded-lg shadow p-6 animate-pulse space-y-4">
+                <div className="h-6 bg-muted rounded w-1/2 mb-4" />
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-32 bg-muted rounded" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -120,7 +140,7 @@ export default function GroupDetailPage() {
                     </button>
                     <Link
                       href={`/dashboard/groups/${groupId}/manage`}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
                     >
                       Manage Group
                     </Link>

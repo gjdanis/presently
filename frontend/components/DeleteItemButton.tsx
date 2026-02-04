@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { ConfirmModal } from '@/components/ConfirmModal'
 
 export function DeleteItemButton({
   itemId,
@@ -13,29 +14,29 @@ export function DeleteItemButton({
 }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showConfirm, setShowConfirm] = useState(false)
 
-  async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this item?')) {
-      return
-    }
-
+  async function performDelete() {
     setDeleting(true)
     try {
       await api.deleteItem(itemId)
-      if (onDelete) {
-        onDelete()
-      }
+      if (onDelete) onDelete()
       router.refresh()
-    } catch (error) {
-      console.error('Error deleting item:', error)
-      alert('Failed to delete item')
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.error('Error deleting item:', err)
+      setError('Failed to delete item')
+    } finally {
       setDeleting(false)
+      setShowConfirm(false)
     }
   }
 
   return (
-    <button
-      onClick={handleDelete}
+    <span className="inline-flex flex-col items-start">
+      {error && <span className="text-xs text-red-600 dark:text-red-400 mb-1">{error}</span>}
+      <button
+        onClick={() => setShowConfirm(true)}
       disabled={deleting}
       className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-2 disabled:opacity-50 disabled:cursor-not-allowed"
       title="Delete item"
@@ -76,5 +77,16 @@ export function DeleteItemButton({
         </svg>
       )}
     </button>
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={performDelete}
+        title="Delete item"
+        message="Are you sure you want to delete this item?"
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+      />
+    </span>
   )
 }

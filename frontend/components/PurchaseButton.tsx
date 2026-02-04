@@ -22,6 +22,7 @@ export function PurchaseButton({
 }: PurchaseButtonProps) {
   const [claimed, setClaimed] = useState(purchasedByMe)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleTogglePurchase() {
     if (isProcessing) return
@@ -31,6 +32,7 @@ export function PurchaseButton({
 
     // Optimistic UI update: immediately update the state
     setClaimed(newClaimedState)
+    setError(null)
     setIsProcessing(true)
 
     try {
@@ -46,10 +48,9 @@ export function PurchaseButton({
       onClaimChange?.(newClaimedState)
       setIsProcessing(false)
     } catch (error) {
-      console.error('Error toggling claim:', error)
-      // Revert on failure
+      if (process.env.NODE_ENV === 'development') console.error('Error toggling claim:', error)
       setClaimed(previousClaimedState)
-      alert(newClaimedState ? 'Failed to claim item' : 'Failed to unclaim item')
+      setError(newClaimedState ? 'Failed to claim item' : 'Failed to unclaim item')
       setIsProcessing(false)
     }
   }
@@ -69,7 +70,7 @@ export function PurchaseButton({
       className={`w-full px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 disabled:cursor-not-allowed ${
         claimed
           ? 'bg-green-600 hover:bg-green-700 text-white'
-          : 'bg-blue-600 hover:bg-blue-700 text-white'
+          : 'bg-primary text-primary-foreground hover:opacity-90'
       }`}
     >
       <span className="flex items-center justify-center gap-2">

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ImageUpload } from '@/components/ImageUpload'
+import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
 import type { WishlistItem, Group } from '@/lib/types'
 
@@ -15,7 +16,11 @@ type EditItemModalProps = {
 export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalProps) {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [groups, setGroups] = useState<Group[]>([])
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [selectedGroups, setSelectedGroups] = useState<string[]>(
     item.groups?.map((g) => g.id) || []
   )
@@ -33,15 +38,11 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
 
   useEffect(() => {
     if (isOpen) {
-      // Initialize selected groups from item
       const initialGroups = item.groups?.map((g) => g.id) || []
-      console.log('EditItemModal opened:', {
-        itemId: item.id,
-        itemGroups: item.groups,
-        initialSelectedGroups: initialGroups
-      })
-
+      setSaveError(null)
+      setDeleteError(null)
       loadGroups()
+      closeButtonRef.current?.focus()
       // Reset form when modal opens with new item
       setFormData({
         name: item.name,
@@ -62,19 +63,13 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
       const data = await api.getGroups()
       setGroups(data.groups)
     } catch (error) {
-      console.error('Error loading groups:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading groups:', error)
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-
-    console.log('Saving item:', {
-      itemId: item.id,
-      selectedGroups,
-      groupsChanged
-    })
 
     try {
       await api.updateItem(item.id, {
@@ -95,8 +90,8 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
 
       onClose()
     } catch (error) {
-      console.error('Error updating item:', error)
-      alert('Failed to update item')
+      if (process.env.NODE_ENV === 'development') console.error('Error updating item:', error)
+      setSaveError('Failed to update item')
     } finally {
       setSaving(false)
     }
@@ -117,29 +112,29 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
     )
   }
 
-  async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
-      return
-    }
-
+  async function performDelete() {
     setDeleting(true)
-
     try {
       await api.deleteItem(item.id)
-
-      // Call onSaved callback to refresh data
-      if (onSaved) {
-        onSaved()
-      }
-
+      if (onSaved) onSaved()
+      setShowDeleteConfirm(false)
       onClose()
     } catch (error) {
-      console.error('Error deleting item:', error)
-      alert('Failed to delete item')
+      if (process.env.NODE_ENV === 'development') console.error('Error deleting item:', error)
+      setDeleteError('Failed to delete item')
     } finally {
       setDeleting(false)
     }
   }
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
@@ -160,7 +155,10 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
               Edit Item
             </h2>
             <button
+              ref={closeButtonRef}
+              type="button"
               onClick={onClose}
+              aria-label="Close"
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,6 +169,11 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
 
           {/* Form Content */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {saveError && (
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                {saveError}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
                 Item Name *
@@ -180,7 +183,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input"
               />
             </div>
 
@@ -192,7 +195,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input"
               />
             </div>
 
@@ -204,7 +207,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
                 type="url"
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input"
               />
             </div>
 
@@ -223,7 +226,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
                 min="0"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input"
               />
             </div>
 
@@ -255,10 +258,15 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
               )}
             </div>
 
+            {deleteError && (
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                {deleteError}
+              </div>
+            )}
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={deleting || saving}
                 className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -275,7 +283,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
               <button
                 type="submit"
                 disabled={saving || deleting}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -283,6 +291,16 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
           </form>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={performDelete}
+        title="Delete item"
+        message="Are you sure you want to delete this item? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   )
 }

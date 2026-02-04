@@ -40,11 +40,10 @@ export default function DashboardPage() {
         api.getGroups(),
         api.getWishlist(),
       ])
-      console.log('Dashboard loaded wishlist items:', wishlistData.items)
       setGroups(groupsData.groups)
       setWishlistItems(wishlistData.items)
     } catch (error) {
-      console.error('Error loading dashboard data:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading dashboard data:', error)
     } finally {
       setLoadingData(false)
     }
@@ -79,7 +78,7 @@ export default function DashboardPage() {
             <div className="flex gap-3">
               <Link
                 href="/dashboard/wishlists/new"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
                 + Add Item
               </Link>
@@ -114,7 +113,7 @@ export default function DashboardPage() {
                 </p>
                 <Link
                   href="/dashboard/groups/new"
-                  className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                  className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
                 >
                   Create Your First Group
                 </Link>
@@ -172,7 +171,7 @@ export default function DashboardPage() {
                 </p>
                 <Link
                   href="/dashboard/wishlists/new"
-                  className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                  className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
                 >
                   Add Your First Item
                 </Link>
@@ -184,10 +183,7 @@ export default function DashboardPage() {
                     key={item.id}
                     item={item}
                     onPhotoClick={() => setSelectedItem(item)}
-                    onEditClick={() => {
-                      console.log('Dashboard: Setting editing item:', item)
-                      setEditingItem(item)
-                    }}
+                    onEditClick={() => setEditingItem(item)}
                     editMode={true}
                   />
                 ))}

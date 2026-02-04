@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { QuickInvite } from './QuickInvite'
 
 type InviteMemberModalProps = {
@@ -10,6 +11,21 @@ type InviteMemberModalProps = {
 }
 
 export function InviteMemberModal({ groupId, groupName, isOpen, onClose }: InviteMemberModalProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (isOpen) closeButtonRef.current?.focus()
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
@@ -29,7 +45,10 @@ export function InviteMemberModal({ groupId, groupName, isOpen, onClose }: Invit
               Invite Members to {groupName}
             </h2>
             <button
+              ref={closeButtonRef}
+              type="button"
               onClick={onClose}
+              aria-label="Close"
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

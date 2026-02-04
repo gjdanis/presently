@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
+import { ConfirmModal } from '@/components/ConfirmModal'
 import type { ActiveInvitation } from '@/lib/types'
 
 type AddMemberFormProps = {
@@ -15,6 +16,9 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
   const [activeInvitations, setActiveInvitations] = useState<ActiveInvitation[]>([])
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(true)
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false)
+  const [tokenToRevoke, setTokenToRevoke] = useState<string | null>(null)
+  const [revoking, setRevoking] = useState(false)
 
   useEffect(() => {
     loadActiveInvitations()
@@ -27,7 +31,7 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
       const invitations = await api.getActiveInvitations(groupId)
       setActiveInvitations(invitations)
     } catch (err: any) {
-      console.error('Error loading invitations:', err)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading invitations:', err)
     } finally {
       setIsLoadingInvitations(false)
     }
@@ -51,7 +55,7 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
       // Reload active invitations to show the new one
       await loadActiveInvitations()
     } catch (err: any) {
-      console.error('Error generating invitation:', err)
+      if (process.env.NODE_ENV === 'development') console.error('Error generating invitation:', err)
       setError(err.message || 'Failed to generate invitation link')
       setIsGenerating(false)
     }
@@ -66,22 +70,25 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
     }, 2000)
   }
 
-  async function handleRevoke(token: string) {
-    if (!confirm('Are you sure you want to revoke this invitation link?')) {
-      return
-    }
+  function openRevokeConfirm(token: string) {
+    setTokenToRevoke(token)
+    setShowRevokeConfirm(true)
+  }
 
+  async function performRevoke() {
+    if (!tokenToRevoke) return
+    setRevoking(true)
     try {
-      await api.revokeInvitation(token)
+      await api.revokeInvitation(tokenToRevoke)
       await loadActiveInvitations()
-
-      // If the revoked link was the one we just generated, clear it
-      if (inviteUrl.includes(token)) {
-        setInviteUrl('')
-      }
+      if (inviteUrl.includes(tokenToRevoke)) setInviteUrl('')
+      setShowRevokeConfirm(false)
+      setTokenToRevoke(null)
     } catch (err: any) {
-      console.error('Error revoking invitation:', err)
+      if (process.env.NODE_ENV === 'development') console.error('Error revoking invitation:', err)
       setError(err.message || 'Failed to revoke invitation')
+    } finally {
+      setRevoking(false)
     }
   }
 
@@ -97,7 +104,7 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
         <button
           onClick={handleGenerateLink}
           disabled={isGenerating}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? 'Generating...' : 'Generate Invitation Link'}
         </button>
@@ -157,12 +164,12 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => copyToClipboard(invitation.invite_url.replace(/^https?:\/\/[^/]+/, window.location.origin), invitation.token)}
-                      className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-all"
+                      className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded font-medium hover:opacity-90 transition-opacity"
                     >
                       {copiedToken === invitation.token ? '✓ Copied!' : 'Copy Link'}
                     </button>
                     <button
-                      onClick={() => handleRevoke(invitation.token)}
+                      onClick={() => openRevokeConfirm(invitation.token)}
                       className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded font-medium"
                     >
                       Revoke
@@ -192,6 +199,16 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={showRevokeConfirm}
+        onClose={() => { setShowRevokeConfirm(false); setTokenToRevoke(null); }}
+        onConfirm={performRevoke}
+        title="Revoke invitation"
+        message="Are you sure you want to revoke this invitation link? It will no longer work."
+        confirmLabel="Revoke"
+        variant="danger"
+        loading={revoking}
+      />
     </div>
   )
 }

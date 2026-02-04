@@ -31,7 +31,7 @@ export default function GroupsPage() {
       const data = await api.getGroups()
       setGroups(data.groups)
     } catch (error) {
-      console.error('Error loading groups:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading groups:', error)
     } finally {
       setLoading(false)
     }
@@ -39,11 +39,25 @@ export default function GroupsPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <DashboardNav userName={profile?.name || 'User'} />
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <div className="flex justify-between items-center mb-6">
+              <div className="h-9 w-40 bg-muted rounded animate-pulse" />
+              <div className="h-10 w-32 bg-muted rounded-lg animate-pulse" />
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-lg shadow p-6 animate-pulse">
+                  <div className="h-6 bg-muted rounded w-3/4 mb-2" />
+                  <div className="h-4 bg-muted rounded w-1/2 mb-3" />
+                  <div className="h-4 bg-muted rounded w-1/3" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -62,7 +76,7 @@ export default function GroupsPage() {
             <h1 className="text-3xl font-bold">My Groups</h1>
             <Link
               href="/dashboard/groups/new"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
             >
               Create Group
             </Link>
@@ -76,7 +90,7 @@ export default function GroupsPage() {
               </p>
               <Link
                 href="/dashboard/groups/new"
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
               >
                 Create Your First Group
               </Link>

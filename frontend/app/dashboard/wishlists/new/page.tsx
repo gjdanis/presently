@@ -22,6 +22,7 @@ export default function NewWishlistItemPage() {
     price: '',
   })
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -38,7 +39,7 @@ export default function NewWishlistItemPage() {
   async function loadGroups() {
     try {
       const data = await api.getGroups()
-      setGroups(data.groups.map((g: any) => ({ id: g.id, name: g.name })))
+      setGroups(data.groups)
 
       // Pre-select group from query parameter
       const groupId = searchParams.get('group')
@@ -46,7 +47,7 @@ export default function NewWishlistItemPage() {
         setSelectedGroups([groupId])
       }
     } catch (error) {
-      console.error('Error loading groups:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error loading groups:', error)
     }
   }
 
@@ -74,9 +75,9 @@ export default function NewWishlistItemPage() {
         router.push('/dashboard/wishlists')
       }
     } catch (error: any) {
-      console.error('Error creating item:', error)
-      const message = error?.response?.data?.error || 'Failed to create item'
-      alert(message)
+      if (process.env.NODE_ENV === 'development') console.error('Error creating item:', error)
+      const message = error?.message || error?.response?.data?.detail || 'Failed to create item'
+      setSubmitError(message)
       setLoading(false)
     }
   }
@@ -107,6 +108,11 @@ export default function NewWishlistItemPage() {
         <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">Add Wishlist Item</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6 sm:p-8">
+          {submitError && (
+            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+              {submitError}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
               Item Name *
@@ -116,7 +122,7 @@ export default function NewWishlistItemPage() {
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input"
               placeholder="e.g., Wireless Headphones"
             />
           </div>
@@ -129,7 +135,7 @@ export default function NewWishlistItemPage() {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input"
               placeholder="Any specific details, color preferences, etc."
             />
           </div>
@@ -142,7 +148,7 @@ export default function NewWishlistItemPage() {
               type="url"
               value={formData.url}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input"
               placeholder="https://..."
             />
           </div>
@@ -162,7 +168,7 @@ export default function NewWishlistItemPage() {
               min="0"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input"
               placeholder="0.00"
             />
           </div>
@@ -206,7 +212,7 @@ export default function NewWishlistItemPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-primary text-primary-foreground font-medium py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Add Item'}
             </button>

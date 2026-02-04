@@ -11,6 +11,7 @@ type ImageUploadProps = {
 export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null)
   const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Update preview when currentImageUrl prop changes
@@ -22,18 +23,16 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+      setError('Please select an image file')
       return
     }
-
-    // Check file size (max 10MB before compression)
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image file is too large. Please select an image under 10MB.')
+      setError('Image file is too large. Please select an image under 10MB.')
       return
     }
 
+    setError(null)
     setUploading(true)
 
     try {
@@ -62,8 +61,8 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
         onImageChange(resizedDataUrl)
       }
     } catch (error) {
-      console.error('Error processing image:', error)
-      alert('Failed to process image')
+      if (process.env.NODE_ENV === 'development') console.error('Error processing image:', error)
+      setError('Failed to process image')
     } finally {
       setUploading(false)
     }
@@ -71,6 +70,7 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
 
   function handleRemove() {
     setPreview(null)
+    setError(null)
     onImageChange(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -82,7 +82,9 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
       <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
         Photo (optional)
       </label>
-
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      )}
       {preview ? (
         <div className="relative inline-block">
           <img

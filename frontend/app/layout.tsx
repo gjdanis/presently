@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
+import { AuthLoadingGate } from '@/components/AuthLoadingGate';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,7 +23,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <AuthProvider>
-          {children}
+          <AuthLoadingGate>
+            {children}
+          </AuthLoadingGate>
         </AuthProvider>
       </body>
     </html>
