@@ -252,8 +252,26 @@ export default function GroupDetailPage() {
                                 purchasedByMe={purchasedByMe}
                                 purchasedByName={purchasedByName}
                                 onClaimChange={(claimed) => {
-                                  // Optionally refresh the group data
-                                  // For now, the PurchaseButton handles its own state
+                                  // Optimistically update local state instead of reloading
+                                  setGroupData(prevData => {
+                                    if (!prevData) return prevData
+
+                                    return {
+                                      ...prevData,
+                                      wishlists: prevData.wishlists.map(wishlist => ({
+                                        ...wishlist,
+                                        items: wishlist.items.map(wishlistItem =>
+                                          wishlistItem.id === item.id
+                                            ? {
+                                                ...wishlistItem,
+                                                is_purchased: claimed,
+                                                purchased_by: claimed ? profile.id : undefined,
+                                              }
+                                            : wishlistItem
+                                        ),
+                                      })),
+                                    }
+                                  })
                                 }}
                               />
                             ) : undefined
