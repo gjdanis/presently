@@ -17,13 +17,6 @@ class ProfileBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
 
 
-class ProfileCreate(ProfileBase):
-    """Profile creation request."""
-
-    email: EmailStr
-    cognito_sub: UUID
-
-
 class ProfileUpdate(BaseModel):
     """Profile update request."""
 
