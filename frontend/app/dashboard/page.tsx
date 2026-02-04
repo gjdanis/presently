@@ -71,10 +71,10 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-6">
-          {/* Header with greeting */}
+          {/* Header with greeting and actions */}
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Welcome back, {profile.name?.split(' ')[0] || 'there'}!
+              Dashboard
             </h1>
             <div className="flex gap-3">
               <Link
@@ -151,7 +151,7 @@ export default function DashboardPage() {
 
           {/* Wishlist Items */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Wishlist Items</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Wishlist</h2>
 
             {loadingData ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
