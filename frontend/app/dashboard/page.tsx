@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const [groups, setGroups] = useState<Group[]>([])
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
   const [loadingData, setLoadingData] = useState(true)
-  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [selectedItem, setSelectedItem] = useState<WishlistItem | null>(null)
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {

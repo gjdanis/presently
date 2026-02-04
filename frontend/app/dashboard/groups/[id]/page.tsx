@@ -23,7 +23,7 @@ export default function GroupDetailPage() {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [hidePurchased, setHidePurchased] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [selectedItem, setSelectedItem] = useState<WishlistItem | null>(null)
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {

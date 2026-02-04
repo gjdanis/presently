@@ -1,16 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { WishlistItem } from '@/lib/types'
 
 type ItemDetailModalProps = {
-  item: {
-    name: string
-    description?: string
-    price?: number
-    url?: string
-    photoUrl?: string
-    photo_url?: string
-  }
+  item: WishlistItem
   isOpen: boolean
   onClose: () => void
 }
@@ -29,7 +23,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
   if (!isOpen) return null
 
-  const photoUrl = item.photoUrl || item.photo_url
+  const photoUrl = item.photo_url
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">

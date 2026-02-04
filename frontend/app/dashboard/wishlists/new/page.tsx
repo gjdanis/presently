@@ -5,11 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { ImageUpload } from '@/components/ImageUpload'
 import { api } from '@/lib/api'
-
-type Group = {
-  id: string
-  name: string
-}
+import type { Group } from '@/lib/types'
 
 export default function NewWishlistItemPage() {
   const router = useRouter()
