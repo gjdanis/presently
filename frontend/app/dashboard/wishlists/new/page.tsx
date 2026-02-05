@@ -92,8 +92,8 @@ export default function NewWishlistItemPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-300">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     )
   }
@@ -103,18 +103,18 @@ export default function NewWishlistItemPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">Add Wishlist Item</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-foreground">Add Wishlist Item</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6 sm:p-8">
+        <form onSubmit={handleSubmit} className="space-y-6 bg-card rounded-lg shadow p-6 sm:p-8">
           {submitError && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">
               {submitError}
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+            <label className="block text-sm font-medium mb-2 text-foreground">
               Item Name *
             </label>
             <input
@@ -128,7 +128,7 @@ export default function NewWishlistItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+            <label className="block text-sm font-medium mb-2 text-foreground">
               Description
             </label>
             <textarea
@@ -141,7 +141,7 @@ export default function NewWishlistItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+            <label className="block text-sm font-medium mb-2 text-foreground">
               URL (link to product)
             </label>
             <input
@@ -159,7 +159,7 @@ export default function NewWishlistItemPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+            <label className="block text-sm font-medium mb-2 text-foreground">
               Estimated Price
             </label>
             <input
@@ -174,11 +174,11 @@ export default function NewWishlistItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-3 text-gray-900 dark:text-gray-100">
+            <label className="block text-sm font-medium mb-3 text-foreground">
               Share with Groups (optional)
             </label>
             {groups.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-muted-foreground text-sm">
                 You're not a member of any groups yet. This item will be private until you share it.
               </p>
             ) : (
@@ -187,20 +187,20 @@ export default function NewWishlistItemPage() {
                   {groups.map((group) => (
                     <label
                       key={group.id}
-                      className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:bg-accent"
                     >
                       <input
                         type="checkbox"
                         checked={selectedGroups.includes(group.id)}
                         onChange={() => toggleGroup(group.id)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
                       />
-                      <span className="ml-3 text-gray-900 dark:text-gray-100">{group.name}</span>
+                      <span className="ml-3 text-foreground">{group.name}</span>
                     </label>
                   ))}
                 </div>
                 {selectedGroups.length === 0 && (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
+                  <p className="text-muted-foreground text-sm mt-2">
                     No groups selected - this item will be private until you share it with a group
                   </p>
                 )}
@@ -219,7 +219,7 @@ export default function NewWishlistItemPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard/wishlists')}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="px-6 py-2 border border-border rounded-lg hover:bg-accent text-foreground"
             >
               Cancel
             </button>

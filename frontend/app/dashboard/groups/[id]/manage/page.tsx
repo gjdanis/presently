@@ -99,7 +99,7 @@ export default function ManageGroupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <DashboardNav userName={profile.name || 'User'} />
 
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -107,27 +107,27 @@ export default function ManageGroupPage() {
           <div className="mb-6">
             <Link
               href={`/dashboard/groups/${groupId}`}
-              className="text-blue-600 dark:text-blue-400 hover:underline mb-2 inline-block"
+              className="text-primary hover:underline mb-2 inline-block"
             >
               ← Back to Group
             </Link>
             <h1 className="text-3xl font-bold">Manage Group</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
+            <p className="text-muted-foreground mt-2">
               {groupData.group.name}
             </p>
           </div>
 
           {/* Group Info Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+          <div className="bg-card rounded-lg shadow p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Group Information</h2>
             <div className="space-y-2">
               <div>
-                <label className="text-sm text-gray-500 dark:text-gray-400">Name</label>
+                <label className="text-sm text-muted-foreground">Name</label>
                 <p className="font-medium">{groupData.group.name}</p>
               </div>
               {groupData.group.description && (
                 <div>
-                  <label className="text-sm text-gray-500 dark:text-gray-400">Description</label>
+                  <label className="text-sm text-muted-foreground">Description</label>
                   <p>{groupData.group.description}</p>
                 </div>
               )}
@@ -135,19 +135,19 @@ export default function ManageGroupPage() {
           </div>
 
           {/* Members Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Members ({groupData.members.length})</h2>
+          <div className="bg-card rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Members ({groupData.members.length})</h2>
             <div className="space-y-3">
               {groupData.members.map((member: any) => {
                 const memberId = member.userId || member.user_id
                 return (
                   <div
                     key={memberId}
-                    className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+                    className="flex items-center justify-between p-3 border border-border rounded-lg"
                   >
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="font-medium text-foreground">{member.name}</p>
+                      <p className="text-sm text-muted-foreground">
                         {member.email}
                       </p>
                     </div>
@@ -155,8 +155,8 @@ export default function ManageGroupPage() {
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
                           member.role === 'admin'
-                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {member.role}
@@ -177,24 +177,24 @@ export default function ManageGroupPage() {
           </div>
 
           {/* Add Member Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
+          <div className="bg-card rounded-lg shadow p-6 mt-6">
             <h2 className="text-xl font-semibold mb-4">Add Members</h2>
             <AddMemberForm groupId={groupId} />
           </div>
 
           {/* Danger Zone */}
-          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-2 text-red-900 dark:text-red-200">Danger Zone</h2>
-            <p className="text-red-700 dark:text-red-300 mb-4 text-sm">
+          <div className="bg-destructive/10 border-2 border-destructive/20 rounded-lg p-6 mt-6">
+            <h2 className="text-xl font-semibold mb-2 text-destructive">Danger Zone</h2>
+            <p className="text-destructive mb-4 text-sm">
               Once you delete a group, there is no going back. All wishlist associations will be removed.
             </p>
             {deleteError && (
-              <p className="text-red-600 dark:text-red-400 text-sm mb-4">{deleteError}</p>
+              <p className="text-destructive text-sm mb-4">{deleteError}</p>
             )}
             <button
               onClick={() => setShowDeleteConfirm(true)}
               disabled={deleting}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-destructive hover:opacity-90 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Delete Group
             </button>

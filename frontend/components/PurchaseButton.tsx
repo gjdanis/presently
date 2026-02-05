@@ -57,7 +57,7 @@ export function PurchaseButton({
 
   if (isPurchased && !purchasedByMe) {
     return (
-      <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+      <div className="text-sm text-muted-foreground font-medium">
         ✓ Claimed by {purchasedByName || 'someone else'}
       </div>
     )
@@ -69,7 +69,7 @@ export function PurchaseButton({
       disabled={isProcessing}
       className={`w-full px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 disabled:cursor-not-allowed ${
         claimed
-          ? 'bg-green-600 hover:bg-green-700 text-white'
+          ? 'bg-primary hover:opacity-90 text-primary-foreground'
           : 'bg-primary text-primary-foreground hover:opacity-90'
       }`}
     >

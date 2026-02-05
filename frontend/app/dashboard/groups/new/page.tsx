@@ -27,23 +27,23 @@ export default function NewGroupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+    <div className="min-h-screen bg-background py-12">
       <div className="max-w-2xl mx-auto px-4">
         <div className="mb-6">
           <Link
             href="/dashboard/groups"
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-500 flex items-center gap-2"
+            className="text-primary hover:opacity-80 flex items-center gap-2"
           >
             ← Back to Groups
           </Link>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
+        <div className="bg-card rounded-lg shadow p-8">
           <h1 className="text-3xl font-bold mb-6">Create New Group</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded">
+              <div className="bg-destructive/10 text-destructive p-3 rounded">
                 {error}
               </div>
             )}
@@ -87,7 +87,7 @@ export default function NewGroupPage() {
               </button>
               <Link
                 href="/dashboard/groups"
-                className="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 text-center"
+                className="flex-1 py-2 px-4 bg-secondary text-secondary-foreground rounded-md hover:opacity-90 text-center"
               >
                 Cancel
               </Link>

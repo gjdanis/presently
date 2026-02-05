@@ -113,11 +113,11 @@ function RegisterForm() {
   // Success state
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="max-w-md w-full p-8 bg-card rounded-lg shadow">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-green-600">Account Created!</h2>
-            <p className="mt-2 text-gray-600 dark:text-gray-300">
+            <h2 className="text-2xl font-bold text-primary">Account Created!</h2>
+            <p className="mt-2 text-muted-foreground">
               Redirecting you to your dashboard...
             </p>
           </div>
@@ -129,22 +129,22 @@ function RegisterForm() {
   // Email confirmation state
   if (needsConfirmation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow">
           <div>
             <h2 className="text-3xl font-bold text-center">Verify Your Email</h2>
-            <p className="mt-2 text-center text-gray-600 dark:text-gray-300">
+            <p className="mt-2 text-center text-muted-foreground">
               We sent a verification code to <strong>{email}</strong>
             </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleConfirmCode}>
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded">
+              <div className="bg-destructive/10 text-destructive p-3 rounded">
                 {error}
               </div>
             )}
             <div>
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="code" className="block text-sm font-medium text-foreground">
                 Verification Code
               </label>
               <input
@@ -158,7 +158,7 @@ function RegisterForm() {
                 placeholder="123456"
                 maxLength={6}
               />
-              <p className="mt-2 text-xs text-gray-500 text-center">
+              <p className="mt-2 text-xs text-muted-foreground text-center">
                 Enter the 6-digit code from your email
               </p>
             </div>
@@ -175,7 +175,7 @@ function RegisterForm() {
               <button
                 type="button"
                 onClick={handleResendCode}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500"
+                className="text-sm text-primary hover:text-primary"
               >
                 Didn't receive a code? Resend
               </button>
@@ -188,23 +188,23 @@ function RegisterForm() {
 
   // Registration form
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow">
         <div>
           <h2 className="text-3xl font-bold text-center">Create Account</h2>
-          <p className="mt-2 text-center text-gray-600 dark:text-gray-300">
+          <p className="mt-2 text-center text-muted-foreground">
             Join Presently today
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded">
+            <div className="bg-destructive/10 text-destructive p-3 rounded">
               {error}
             </div>
           )}
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="name" className="block text-sm font-medium text-foreground">
                 Full Name
               </label>
               <input
@@ -218,7 +218,7 @@ function RegisterForm() {
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground">
                 Email address
               </label>
               <input
@@ -233,7 +233,7 @@ function RegisterForm() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground">
                 Password
               </label>
               <input
@@ -246,12 +246,12 @@ function RegisterForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="input mt-1"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Must be at least 8 characters with uppercase, lowercase, number, and symbol
               </p>
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
                 Confirm Password
               </label>
               <input
@@ -275,11 +275,11 @@ function RegisterForm() {
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
 
-          <p className="text-center text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link
               href={inviteToken ? `/auth/login?invite=${inviteToken}` : '/auth/login'}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-500"
+              className="text-primary hover:text-primary"
             >
               Sign in
             </Link>
@@ -294,8 +294,8 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow">
             <div className="text-center">Loading...</div>
           </div>
         </div>

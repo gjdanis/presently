@@ -95,9 +95,9 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
   return (
     <div className="space-y-6">
       {/* Generate New Link Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-lg shadow p-6 border border-border">
         <h3 className="text-lg font-semibold mb-4">Invite People to Group</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Generate a shareable link that anyone can use to join this group.
         </p>
 
@@ -110,12 +110,12 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
         </button>
 
         {error && (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="mt-3 text-sm text-destructive">{error}</p>
         )}
 
         {inviteUrl && (
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+          <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="text-sm font-medium mb-2">
               Share this link:
             </p>
             <div className="flex items-center gap-2">
@@ -123,12 +123,12 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
                 type="text"
                 readOnly
                 value={inviteUrl}
-                className="flex-1 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded font-mono"
+                className="flex-1 px-3 py-2 text-sm bg-background border border-input rounded font-mono"
               />
               <button
                 type="button"
                 onClick={() => copyToClipboard(inviteUrl, 'new')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded font-medium transition-all"
+                className="px-4 py-2 bg-primary text-primary-foreground text-sm rounded font-medium hover:opacity-90 transition-all"
               >
                 {copiedToken === 'new' ? '✓ Copied!' : 'Copy'}
               </button>
@@ -138,26 +138,26 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
       </div>
 
       {/* Active Invitations List */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-lg shadow p-6 border border-border">
         <h3 className="text-lg font-semibold mb-4">Active Invitation Links</h3>
 
         {isLoadingInvitations ? (
-          <p className="text-sm text-gray-500">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         ) : activeInvitations.length === 0 ? (
-          <p className="text-sm text-gray-500">No active invitations</p>
+          <p className="text-sm text-muted-foreground">No active invitations</p>
         ) : (
           <div className="space-y-3">
             {activeInvitations.map((invitation) => (
               <div
                 key={invitation.token}
-                className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+                className="p-4 bg-accent rounded-lg border border-border"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <p className="text-sm font-medium">
                       Created by {invitation.created_by}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       {new Date(invitation.created_at).toLocaleDateString()} • {invitation.current_uses} {invitation.current_uses === 1 ? 'person' : 'people'} joined
                     </p>
                   </div>
@@ -170,7 +170,7 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
                     </button>
                     <button
                       onClick={() => openRevokeConfirm(invitation.token)}
-                      className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded font-medium"
+                      className="px-3 py-1 text-sm bg-destructive text-destructive-foreground rounded font-medium hover:opacity-90"
                     >
                       Revoke
                     </button>
@@ -178,15 +178,15 @@ export function AddMemberForm({ groupId }: AddMemberFormProps) {
                 </div>
 
                 {invitation.accepted_by.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs font-medium mb-2">
                       Accepted by:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {invitation.accepted_by.map((accept, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded"
+                          className="px-2 py-1 text-xs bg-background border border-border rounded"
                         >
                           {accept.name}
                         </span>

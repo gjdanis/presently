@@ -46,8 +46,8 @@ export function QuickInvite({ groupId }: QuickInviteProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Generate Invitation Link</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+        <h3 className="text-lg font-semibold mb-2 text-foreground">Generate Invitation Link</h3>
+        <p className="text-sm text-muted-foreground mb-4">
           Create a shareable link that anyone can use to join this group.
         </p>
 
@@ -60,12 +60,12 @@ export function QuickInvite({ groupId }: QuickInviteProps) {
         </button>
 
         {error && (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="mt-3 text-sm text-destructive">{error}</p>
         )}
 
         {inviteUrl && (
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+          <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="text-sm font-medium text-foreground mb-2">
               Share this link:
             </p>
             <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export function QuickInvite({ groupId }: QuickInviteProps) {
                 type="text"
                 readOnly
                 value={inviteUrl}
-                className="flex-1 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded font-mono"
+                className="flex-1 px-3 py-2 text-sm bg-card border border-border rounded font-mono"
               />
               <button
                 type="button"

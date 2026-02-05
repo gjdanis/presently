@@ -34,11 +34,11 @@ export function DeleteItemButton({
 
   return (
     <span className="inline-flex flex-col items-start">
-      {error && <span className="text-xs text-red-600 dark:text-red-400 mb-1">{error}</span>}
+      {error && <span className="text-xs text-destructive mb-1">{error}</span>}
       <button
         onClick={() => setShowConfirm(true)}
       disabled={deleting}
-      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="text-destructive hover:opacity-80 p-2 disabled:opacity-50 disabled:cursor-not-allowed"
       title="Delete item"
     >
       {deleting ? (

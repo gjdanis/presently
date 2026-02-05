@@ -37,23 +37,23 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow">
         <div>
           <h2 className="text-3xl font-bold text-center">Sign In</h2>
-          <p className="mt-2 text-center text-gray-600 dark:text-gray-300">
+          <p className="mt-2 text-center text-muted-foreground">
             Welcome back to Presently
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded">
+            <div className="bg-destructive/10 text-destructive p-3 rounded">
               {error}
             </div>
           )}
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium">
                 Email address
               </label>
               <input
@@ -68,7 +68,7 @@ function LoginForm() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium">
                 Password
               </label>
               <input
@@ -92,11 +92,11 @@ function LoginForm() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
-          <p className="text-center text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
             <Link
               href={inviteToken ? `/auth/register?invite=${inviteToken}` : '/auth/register'}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-500"
+              className="text-primary hover:opacity-80"
             >
               Sign up
             </Link>
@@ -110,8 +110,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow">
           <div className="text-center">Loading...</div>
         </div>
       </div>

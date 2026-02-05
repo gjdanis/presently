@@ -26,7 +26,7 @@ export function WishlistItemCard({
   const cardContent = (
     <>
       <div className="flex items-start justify-between mb-2">
-        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 flex-1">
+        <h3 className="font-semibold text-lg text-foreground flex-1">
           {item.name}
         </h3>
         {photoUrl && onPhotoClick && (
@@ -36,7 +36,7 @@ export function WishlistItemCard({
               e.stopPropagation()
               onPhotoClick()
             }}
-            className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 relative z-10"
+            className="ml-2 text-primary hover:opacity-80 relative z-10"
             title="View photo"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,13 +47,13 @@ export function WishlistItemCard({
       </div>
 
       {item.description && (
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
           {item.description}
         </p>
       )}
 
       {item.price && (
-        <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mb-3">
+        <p className="text-lg font-bold text-primary mb-3">
           ${Number(item.price).toFixed(2)}
         </p>
       )}
@@ -64,7 +64,7 @@ export function WishlistItemCard({
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-3 inline-flex items-center relative z-10"
+          className="text-sm text-primary hover:underline mb-3 inline-flex items-center relative z-10"
         >
           View Product
           <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +85,7 @@ export function WishlistItemCard({
             <Link
               key={group.id}
               href={`/dashboard/groups/${group.id}`}
-              className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
             >
               {group.name}
             </Link>
@@ -102,8 +102,8 @@ export function WishlistItemCard({
         onClick={onEditClick}
         className={`rounded-lg shadow hover:shadow-lg transition-all p-4 flex flex-col h-full cursor-pointer ${
           highlightPurchased
-            ? 'border-2 border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-            : 'border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+            ? 'border-2 border-primary bg-primary/10'
+            : 'border border-border bg-card'
         }`}
       >
         {cardContent}
@@ -115,8 +115,8 @@ export function WishlistItemCard({
   return (
     <div className={`rounded-lg shadow hover:shadow-lg transition-all p-4 flex flex-col h-full ${
       highlightPurchased
-        ? 'border-2 border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-        : 'border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+        ? 'border-2 border-primary bg-primary/10'
+        : 'border border-border bg-card'
     }`}>
       {cardContent}
     </div>

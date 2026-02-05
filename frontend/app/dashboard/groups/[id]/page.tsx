@@ -102,7 +102,7 @@ export default function GroupDetailPage() {
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <DashboardNav userName={profile.name || 'User'} />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -110,7 +110,7 @@ export default function GroupDetailPage() {
           <div className="mb-6">
             <Link
               href="/dashboard/groups"
-              className="text-blue-600 dark:text-blue-400 hover:underline mb-2 inline-block"
+              className="text-primary hover:underline mb-2 inline-block"
             >
               ← Back to Groups
             </Link>
@@ -118,7 +118,7 @@ export default function GroupDetailPage() {
               <div>
                 <h1 className="text-3xl font-bold">{groupData.group.name}</h1>
                 {groupData.group.description && (
-                  <p className="text-gray-600 dark:text-gray-300 mt-2">
+                  <p className="text-muted-foreground mt-2">
                     {groupData.group.description}
                   </p>
                 )}
@@ -126,7 +126,7 @@ export default function GroupDetailPage() {
               <div className="flex gap-2">
                 <Link
                   href={`/dashboard/wishlists/new?group=${groupId}`}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 font-medium"
                 >
                   + Item
                 </Link>
@@ -134,7 +134,7 @@ export default function GroupDetailPage() {
                   <>
                     <button
                       onClick={() => setShowInviteModal(true)}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                      className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90 font-medium"
                     >
                       + Member
                     </button>
@@ -151,8 +151,8 @@ export default function GroupDetailPage() {
           </div>
 
           {/* Members Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
+          <div className="bg-card rounded-lg shadow p-6 mb-6 border border-border">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">
               Members
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -166,8 +166,8 @@ export default function GroupDetailPage() {
                     onClick={() => setSelectedMemberId(isSelected ? null : memberId)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                       isSelected
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-muted text-foreground hover:bg-accent'
                     }`}
                   >
                     {member.name}
@@ -184,35 +184,35 @@ export default function GroupDetailPage() {
 
           {/* Wishlists Section */}
           {!selectedMemberId ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-300">
+            <div className="bg-card rounded-lg shadow p-8 text-center border border-border">
+              <p className="text-muted-foreground">
                 Select a member above to view their wishlist
               </p>
             </div>
           ) : !selectedWishlist ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-300">
+            <div className="bg-card rounded-lg shadow p-8 text-center border border-border">
+              <p className="text-muted-foreground">
                 No wishlist items have been shared with this group yet.
               </p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="bg-card rounded-lg shadow border border-border">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  <h3 className="text-xl font-semibold text-foreground">
                     {selectedWishlist.user_name}'s Wishlist
                   </h3>
                   {/* Only show toggle if viewing someone else's wishlist */}
                   {selectedMemberId !== profile.id && (
-                    <label className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+                    <label className="flex items-center gap-3 text-sm text-muted-foreground cursor-pointer">
                       <span>Hide purchased items</span>
                       <button
                         type="button"
                         role="switch"
                         aria-checked={hidePurchased}
                         onClick={() => setHidePurchased(!hidePurchased)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                          hidePurchased ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                          hidePurchased ? 'bg-primary' : 'bg-muted'
                         }`}
                       >
                         <span
@@ -225,7 +225,7 @@ export default function GroupDetailPage() {
                   )}
                 </div>
                 {selectedWishlist.items.length === 0 ? (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">No items yet</p>
+                  <p className="text-muted-foreground text-sm">No items yet</p>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {selectedWishlist.items

@@ -79,23 +79,23 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+      <label className="block text-sm font-medium text-foreground">
         Photo (optional)
       </label>
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
       {preview ? (
         <div className="relative inline-block">
           <img
             src={preview}
             alt="Preview"
-            className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+            className="w-32 h-32 object-cover rounded-lg border border-border"
           />
           <button
             type="button"
             onClick={handleRemove}
-            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700"
+            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center hover:opacity-90"
           >
             ×
           </button>
@@ -108,22 +108,21 @@ export function ImageUpload({ currentImageUrl, onImageChange }: ImageUploadProps
             accept="image/*"
             onChange={handleFileChange}
             disabled={uploading}
-            className="block w-full text-sm text-gray-500 dark:text-gray-400
+            className="block w-full text-sm text-muted-foreground
               file:mr-4 file:py-2 file:px-4
               file:rounded-lg file:border-0
               file:text-sm file:font-medium
-              file:bg-blue-50 file:text-blue-700
-              dark:file:bg-blue-900 dark:file:text-blue-200
-              hover:file:bg-blue-100 dark:hover:file:bg-blue-800
+              file:bg-primary/10 file:text-primary
+              hover:file:bg-primary/20
               file:cursor-pointer
               disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {uploading && (
-            <p className="text-sm text-gray-500 mt-1">Processing image...</p>
+            <p className="text-sm text-muted-foreground mt-1">Processing image...</p>
           )}
         </div>
       )}
-      <p className="text-xs text-gray-500 dark:text-gray-400">
+      <p className="text-xs text-muted-foreground">
         Images will be resized to a maximum of 800x800 pixels
       </p>
     </div>

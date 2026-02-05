@@ -70,13 +70,13 @@ export default function WishlistsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <DashboardNav userName={profile?.name || 'User'} />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Wishlist</h1>
+            <h1 className="text-3xl font-bold text-foreground">Wishlist</h1>
             <Link
               href="/dashboard/wishlists/new"
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
@@ -86,14 +86,14 @@ export default function WishlistsPage() {
           </div>
 
           {items.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-              <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">No wishlist items yet</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
+            <div className="bg-card rounded-lg shadow p-8 text-center">
+              <h3 className="text-lg font-semibold mb-2">No wishlist items yet</h3>
+              <p className="text-muted-foreground mb-4">
                 Start adding items you'd like to receive as gifts!
               </p>
               <Link
                 href="/dashboard/wishlists/new"
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 font-medium"
               >
                 Add Your First Item
               </Link>

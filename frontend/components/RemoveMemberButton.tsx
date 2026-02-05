@@ -38,11 +38,11 @@ export function RemoveMemberButton({
 
   return (
     <span className="inline-flex flex-col items-start gap-1">
-      {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
+      {error && <span className="text-xs text-destructive">{error}</span>}
       <button
         onClick={() => setShowConfirm(true)}
         disabled={isRemoving}
-        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-3 py-1 bg-destructive hover:opacity-90 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Remove
       </button>

@@ -38,10 +38,10 @@ export function InviteMemberModal({ groupId, groupName, isOpen, onClose }: Invit
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full">
+        <div className="relative bg-card rounded-lg shadow-xl max-w-2xl w-full">
           {/* Header */}
-          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center rounded-t-lg">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <div className="bg-card border-b border-border px-6 py-4 flex justify-between items-center rounded-t-lg">
+            <h2 className="text-xl font-semibold text-foreground">
               Invite Members to {groupName}
             </h2>
             <button
@@ -49,7 +49,7 @@ export function InviteMemberModal({ groupId, groupName, isOpen, onClose }: Invit
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-muted-foreground hover:text-foreground"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

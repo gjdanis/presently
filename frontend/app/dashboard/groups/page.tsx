@@ -67,13 +67,13 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <DashboardNav userName={profile.name || 'User'} />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">My Groups</h1>
+            <h1 className="text-3xl font-bold">Groups</h1>
             <Link
               href="/dashboard/groups/new"
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90"
@@ -83,9 +83,9 @@ export default function GroupsPage() {
           </div>
 
           {groups.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
+            <div className="bg-card rounded-lg shadow p-8 text-center border border-border">
               <h3 className="text-lg font-semibold mb-2">No groups yet</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Create a group to start sharing wishlists with family and friends.
               </p>
               <Link
@@ -101,22 +101,22 @@ export default function GroupsPage() {
                 <Link
                   key={group.id}
                   href={`/dashboard/groups/${group.id}`}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+                  className="bg-card rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-border"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-xl font-semibold">{group.name}</h3>
                     {group.role === 'admin' && (
-                      <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                         Admin
                       </span>
                     )}
                   </div>
                   {group.description && (
-                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+                    <p className="text-muted-foreground text-sm mb-4">
                       {group.description}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
                   </p>
                 </Link>

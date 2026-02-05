@@ -148,10 +148,10 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="relative bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-foreground">
               Edit Item
             </h2>
             <button
@@ -159,7 +159,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-muted-foreground hover:text-foreground"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -170,12 +170,12 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
           {/* Form Content */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {saveError && (
-              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">
                 {saveError}
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <label className="block text-sm font-medium mb-2 text-foreground">
                 Item Name *
               </label>
               <input
@@ -188,7 +188,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <label className="block text-sm font-medium mb-2 text-foreground">
                 Description
               </label>
               <textarea
@@ -200,7 +200,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <label className="block text-sm font-medium mb-2 text-foreground">
                 URL (link to product)
               </label>
               <input
@@ -217,7 +217,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
             />
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <label className="block text-sm font-medium mb-2 text-foreground">
                 Estimated Price
               </label>
               <input
@@ -231,11 +231,11 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-3 text-gray-900 dark:text-gray-100">
+              <label className="block text-sm font-medium mb-3 text-foreground">
                 Share with Groups
               </label>
               {groups.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                <p className="text-muted-foreground text-sm">
                   You're not a member of any groups yet.
                 </p>
               ) : (
@@ -243,15 +243,15 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
                   {groups.map((group) => (
                     <label
                       key={group.id}
-                      className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:bg-accent"
                     >
                       <input
                         type="checkbox"
                         checked={selectedGroups.includes(group.id)}
                         onChange={() => toggleGroup(group.id)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
                       />
-                      <span className="ml-3 text-gray-900 dark:text-gray-100">{group.name}</span>
+                      <span className="ml-3 text-foreground">{group.name}</span>
                     </label>
                   ))}
                 </div>
@@ -259,7 +259,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
             </div>
 
             {deleteError && (
-              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">
                 {deleteError}
               </div>
             )}
@@ -268,7 +268,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={deleting || saving}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-destructive hover:opacity-90 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>
@@ -276,7 +276,7 @@ export function EditItemModal({ item, isOpen, onClose, onSaved }: EditItemModalP
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="px-6 py-2 border border-border rounded-lg hover:bg-accent text-foreground"
               >
                 Cancel
               </button>
