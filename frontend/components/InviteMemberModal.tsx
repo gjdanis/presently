@@ -38,7 +38,7 @@ export function InviteMemberModal({ groupId, groupName, isOpen, onClose }: Invit
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-card rounded-lg shadow-xl max-w-2xl w-full">
+        <div className="relative bg-card rounded-lg shadow-xl max-w-2xl w-full border border-border">
           {/* Header */}
           <div className="bg-card border-b border-border px-6 py-4 flex justify-between items-center rounded-t-lg">
             <h2 className="text-xl font-semibold text-foreground">

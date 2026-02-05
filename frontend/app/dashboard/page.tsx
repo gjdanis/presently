@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { DashboardNav } from '@/components/DashboardNav'
 import { ItemDetailModal } from '@/components/ItemDetailModal'
 import { EditItemModal } from '@/components/EditItemModal'
+import { HelpDialog } from '@/components/HelpDialog'
 import { WishlistItemCard } from '@/components/WishlistItemCard'
 import Link from 'next/link'
 import { api } from '@/lib/api'
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   const [loadingData, setLoadingData] = useState(true)
   const [selectedItem, setSelectedItem] = useState<WishlistItem | null>(null)
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
+  const [showHelp, setShowHelp] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -29,6 +31,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (isAuthenticated) {
       loadDashboardData()
+
+      // Check if this is the user's first visit
+      const hasSeenHelp = localStorage.getItem('presently_help_seen')
+      if (!hasSeenHelp) {
+        setShowHelp(true)
+        localStorage.setItem('presently_help_seen', 'true')
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated])
@@ -211,6 +220,9 @@ export default function DashboardPage() {
           onSaved={loadDashboardData}
         />
       )}
+
+      {/* Help Dialog */}
+      <HelpDialog isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   )
 }

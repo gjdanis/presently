@@ -184,7 +184,7 @@ export default function InvitePage({ params }: InvitePageProps) {
           <p className="text-muted-foreground mb-4">
             <strong>{invitation?.invited_by.name || invitation?.invited_by.email}</strong> has
             invited you to join the group{' '}
-            <strong>"{invitation?.group_name}"</strong> on Presently.
+            <strong>{invitation?.group_name}</strong> on Presently.
           </p>
           {invitation?.group_description && (
             <p className="text-sm text-muted-foreground">{invitation.group_description}</p>
