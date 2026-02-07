@@ -51,10 +51,12 @@ class PurchasesService:
         if not self.purchases_repo.item_is_assigned_to_group(item_id, group_id):
             raise ForbiddenError("This item is not shared with this group")
 
-        # Check if item is already purchased in this group
-        existing_purchase = self.purchases_repo.get_purchase(item_id, group_id)
-        if existing_purchase:
-            if str(existing_purchase.purchased_by) == user_id:
+        # Check if item is already claimed in ANY group (not just this group)
+        # This prevents an item shared with multiple groups from being claimed multiple times
+        if self.purchases_repo.item_is_claimed_anywhere(item_id):
+            # Get the specific purchase to check if it's the same user
+            existing_purchase = self.purchases_repo.get_purchase(item_id, group_id)
+            if existing_purchase and str(existing_purchase.purchased_by) == user_id:
                 raise ConflictError("You have already claimed this item")
             raise ConflictError("This item has already been claimed by another member")
 
@@ -72,9 +74,13 @@ class PurchasesService:
         )
 
     def unclaim_item(self, user_id: str, item_id: str, group_id: str) -> None:
-        """Unclaim (un-purchase) a wishlist item."""
-        # Check if purchase exists and user is the one who claimed it
-        purchase = self.purchases_repo.get_purchase(item_id, group_id)
+        """Unclaim (un-purchase) a wishlist item.
+
+        Note: Since items can be shared across multiple groups and purchases are global,
+        we look up the purchase by item_id only (not by group_id).
+        """
+        # Check if purchase exists (regardless of which group it was claimed in)
+        purchase = self.purchases_repo.get_purchase_by_item(item_id)
 
         if not purchase:
             raise NotFoundError("Purchase record not found")
@@ -82,8 +88,8 @@ class PurchasesService:
         if str(purchase.purchased_by) != user_id:
             raise ForbiddenError("You can only unclaim items you have claimed")
 
-        # Delete purchase record
-        rows_deleted = self.purchases_repo.delete_purchase(item_id, group_id, user_id)
+        # Delete purchase record (by item, not by group)
+        rows_deleted = self.purchases_repo.delete_purchase_by_item(item_id, user_id)
 
         if rows_deleted == 0:
             raise NotFoundError("Purchase record not found")

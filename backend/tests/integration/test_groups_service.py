@@ -241,3 +241,99 @@ def test_remove_member_self(
             sample_group["id"],
             sample_profile["id"]
         )
+
+
+def test_get_group_wishlist_items_shows_purchased_status_across_groups(
+    clean_db: Any, sample_profile: dict[str, Any], groups_service: GroupsService
+):
+    """Test that repository query shows item as purchased in ALL groups when claimed in ANY group.
+
+    This is a critical test for the repository query fix - it ensures that when an item
+    is shared with multiple groups and purchased in one group, it appears as purchased
+    in all groups (not just the group where it was claimed).
+    """
+    from uuid import uuid4
+    from repositories.groups_repository import GroupsRepository
+
+    cursor = clean_db.cursor()
+
+    # Create two groups
+    cursor.execute(
+        "INSERT INTO groups (name, created_by) VALUES (%s, %s) RETURNING id",
+        ("Family Group", sample_profile["id"])
+    )
+    group1_id = str(cursor.fetchone()[0])
+
+    cursor.execute(
+        "INSERT INTO groups (name, created_by) VALUES (%s, %s) RETURNING id",
+        ("Friends Group", sample_profile["id"])
+    )
+    group2_id = str(cursor.fetchone()[0])
+
+    # Add user to both groups
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (sample_profile["id"], group1_id, "admin")
+    )
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (sample_profile["id"], group2_id, "admin")
+    )
+
+    # Create a second user who will purchase the item
+    buyer_id = str(uuid4())
+    cursor.execute(
+        "INSERT INTO profiles (id, email, name) VALUES (%s, %s, %s)",
+        (buyer_id, "buyer@example.com", "Buyer User")
+    )
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (buyer_id, group1_id, "member")
+    )
+
+    # Create wishlist item and share with BOTH groups
+    cursor.execute(
+        """
+        INSERT INTO wishlist_items (user_id, name, description, price, rank)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (sample_profile["id"], "Shared Item", "Item shared with multiple groups", 99.99, 0)
+    )
+    item_id = str(cursor.fetchone()[0])
+
+    # Assign to both groups
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (item_id, group1_id)
+    )
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (item_id, group2_id)
+    )
+
+    # Buyer purchases item in group1 ONLY
+    cursor.execute(
+        "INSERT INTO purchases (item_id, purchased_by, group_id) VALUES (%s, %s, %s)",
+        (item_id, buyer_id, group1_id)
+    )
+
+    clean_db.commit()
+    cursor.close()
+
+    # Test repository method directly
+    repo = GroupsRepository()
+
+    # Get wishlist items for group1 (where item was purchased)
+    group1_items = repo.get_group_wishlist_items(group1_id)
+    assert len(group1_items) == 1
+    assert str(group1_items[0].id) == item_id
+    assert group1_items[0].purchased_by is not None, "Item should show as purchased in group1"
+    assert str(group1_items[0].purchased_by) == buyer_id
+
+    # Get wishlist items for group2 (where item was NOT purchased, but should still show as purchased)
+    group2_items = repo.get_group_wishlist_items(group2_id)
+    assert len(group2_items) == 1
+    assert str(group2_items[0].id) == item_id
+    assert group2_items[0].purchased_by is not None, "Item should show as purchased in group2 even though it was claimed in group1"
+    assert str(group2_items[0].purchased_by) == buyer_id, "Should show the same buyer across all groups"

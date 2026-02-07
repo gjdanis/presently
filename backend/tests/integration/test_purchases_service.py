@@ -313,3 +313,169 @@ def test_unclaim_someone_elses_claim(
             item_id=wishlist_item_for_purchase["id"],
             group_id=wishlist_item_for_purchase["group_id"],
         )
+
+
+def test_cannot_claim_item_already_claimed_in_different_group(
+    clean_db: Any, sample_profile: dict[str, Any], second_profile: dict[str, Any], purchases_service: PurchasesService
+):
+    """Test that an item claimed in one group cannot be claimed in another group.
+
+    This is a critical bug fix: items shared with multiple groups should only
+    be claimable once globally, not once per group.
+    """
+    cursor = clean_db.cursor()
+
+    # Create two groups
+    cursor.execute(
+        "INSERT INTO groups (name, created_by) VALUES (%s, %s) RETURNING id",
+        ("Family Group", sample_profile["id"])
+    )
+    group1_id = str(cursor.fetchone()[0])
+
+    cursor.execute(
+        "INSERT INTO groups (name, created_by) VALUES (%s, %s) RETURNING id",
+        ("Friends Group", sample_profile["id"])
+    )
+    group2_id = str(cursor.fetchone()[0])
+
+    # Add second user to both groups
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (second_profile["id"], group1_id, "member")
+    )
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (second_profile["id"], group2_id, "member")
+    )
+
+    # Create third user for group2
+    third_user_id = str(uuid4())
+    cursor.execute(
+        "INSERT INTO profiles (id, email, name) VALUES (%s, %s, %s)",
+        (third_user_id, "third@example.com", "Third User")
+    )
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (third_user_id, group2_id, "member")
+    )
+
+    # Create wishlist item and share with BOTH groups
+    cursor.execute(
+        """
+        INSERT INTO wishlist_items (user_id, name, description, price, rank)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (sample_profile["id"], "Nintendo Switch", "Shared with multiple groups", 299.99, 0)
+    )
+    item_id = str(cursor.fetchone()[0])
+
+    # Assign to both groups
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (item_id, group1_id)
+    )
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (item_id, group2_id)
+    )
+
+    clean_db.commit()
+    cursor.close()
+
+    # Second user claims item in group1
+    purchases_service.claim_item(
+        user_id=second_profile["id"],
+        item_id=item_id,
+        group_id=group1_id,
+    )
+
+    # Third user tries to claim the SAME item in group2
+    # This should fail because the item is already claimed (even though it's a different group)
+    with pytest.raises(ConflictError, match="already been claimed"):
+        purchases_service.claim_item(
+            user_id=third_user_id,
+            item_id=item_id,
+            group_id=group2_id,
+        )
+
+
+def test_can_unclaim_item_from_different_group_context(
+    clean_db: Any, sample_profile: dict[str, Any], second_profile: dict[str, Any], purchases_service: PurchasesService
+):
+    """Test that an item can be unclaimed from any group context, regardless of where it was claimed.
+
+    This tests the fix for the unclaim bug: when an item is shared with multiple groups
+    and claimed in one group, it should be unclaimable from any group context.
+    """
+    cursor = clean_db.cursor()
+
+    # Create two groups
+    cursor.execute(
+        "INSERT INTO groups (name, created_by) VALUES (%s, %s) RETURNING id",
+        ("Family Group", sample_profile["id"])
+    )
+    group1_id = str(cursor.fetchone()[0])
+
+    cursor.execute(
+        "INSERT INTO groups (name, created_by) VALUES (%s, %s) RETURNING id",
+        ("Work Friends", sample_profile["id"])
+    )
+    group2_id = str(cursor.fetchone()[0])
+
+    # Add second user to both groups
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (second_profile["id"], group1_id, "member")
+    )
+    cursor.execute(
+        "INSERT INTO group_memberships (user_id, group_id, role) VALUES (%s, %s, %s)",
+        (second_profile["id"], group2_id, "member")
+    )
+
+    # Create wishlist item and share with BOTH groups
+    cursor.execute(
+        """
+        INSERT INTO wishlist_items (user_id, name, description, price, rank)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (sample_profile["id"], "Wireless Mouse", "Shared with multiple groups", 49.99, 0)
+    )
+    item_id = str(cursor.fetchone()[0])
+
+    # Assign to both groups
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (item_id, group1_id)
+    )
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (item_id, group2_id)
+    )
+
+    clean_db.commit()
+    cursor.close()
+
+    # Second user claims item in group1 (Family)
+    purchases_service.claim_item(
+        user_id=second_profile["id"],
+        item_id=item_id,
+        group_id=group1_id,
+    )
+
+    # Now second user unclaims from group2 (Work) context
+    # This should work even though the item was claimed in group1
+    purchases_service.unclaim_item(
+        user_id=second_profile["id"],
+        item_id=item_id,
+        group_id=group2_id,  # Different group than where it was claimed!
+    )
+
+    # Verify item can be claimed again (in any group)
+    purchase = purchases_service.claim_item(
+        user_id=second_profile["id"],
+        item_id=item_id,
+        group_id=group2_id,
+    )
+    assert purchase.id is not None

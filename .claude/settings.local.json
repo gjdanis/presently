@@ -27,7 +27,11 @@
       "Bash(PHOTOS_BUCKET=\"presently-photos-dev-us-east-1-479453697367\" ENVIRONMENT=\"local\" python main.py)",
       "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest tests/integration/test_groups_service.py::test_get_group_detail -v)",
       "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest tests/integration/test_groups_service.py -v)",
-      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest tests/integration/test_groups_service.py::test_get_group_detail_with_items -v)"
+      "Bash(/Users/joe/Documents/presently/backend/venv/bin/python -m pytest tests/integration/test_groups_service.py::test_get_group_detail_with_items -v)",
+      "Bash(python -m pytest tests/integration/test_purchases_service.py::test_cannot_claim_item_already_claimed_in_different_group -v)",
+      "Bash(python -m pytest tests/integration/test_purchases_service.py -v)",
+      "Bash(python -m pytest tests/integration/test_groups_service.py -v)",
+      "Bash(python -m pytest tests/integration/test_groups_service.py::test_get_group_wishlist_items_shows_purchased_status_across_groups -v)"
     ],
     "deny": [],
     "ask": []

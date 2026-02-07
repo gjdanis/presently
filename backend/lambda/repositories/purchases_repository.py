@@ -65,3 +65,32 @@ class PurchasesRepository:
         """
         result = execute_query(query, (item_id, group_id), fetch_one=True)
         return result is not None
+
+    def item_is_claimed_anywhere(self, item_id: str) -> bool:
+        """Check if item has been claimed in ANY group."""
+        query = """
+            SELECT 1 FROM purchases
+            WHERE item_id = %s
+            LIMIT 1
+        """
+        result = execute_query(query, (item_id,), fetch_one=True)
+        return result is not None
+
+    def get_purchase_by_item(self, item_id: str) -> PurchaseEntity | None:
+        """Get purchase record for an item (regardless of group)."""
+        query = """
+            SELECT id, item_id, purchased_by, group_id, purchased_at
+            FROM purchases
+            WHERE item_id = %s
+            LIMIT 1
+        """
+        result = execute_query(query, (item_id,), fetch_one=True)
+        return PurchaseEntity(**result) if result else None
+
+    def delete_purchase_by_item(self, item_id: str, purchased_by: str) -> int:
+        """Delete a purchase record by item_id (regardless of group). Returns number of rows deleted."""
+        query = """
+            DELETE FROM purchases
+            WHERE item_id = %s AND purchased_by = %s
+        """
+        return execute_delete(query, (item_id, purchased_by))

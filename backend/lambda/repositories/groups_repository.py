@@ -199,7 +199,11 @@ class GroupsRepository:
         return result["count"] if result else 0
 
     def get_group_wishlist_items(self, group_id: str) -> list[WishlistItemEntity]:
-        """Get all wishlist items shared with a group."""
+        """Get all wishlist items shared with a group.
+
+        Note: Shows purchased status if item is claimed in ANY group,
+        not just the current group. This prevents duplicate purchases.
+        """
         query = """
             SELECT wi.id, wi.user_id, wi.name, wi.description, wi.url,
                    wi.price, wi.photo_url, wi.rank, wi.created_at, wi.updated_at,
@@ -208,9 +212,9 @@ class GroupsRepository:
             FROM wishlist_items wi
             JOIN item_group_assignments iga ON wi.id = iga.item_id
             JOIN profiles p ON wi.user_id = p.id
-            LEFT JOIN purchases pur ON wi.id = pur.item_id AND pur.group_id = %s
+            LEFT JOIN purchases pur ON wi.id = pur.item_id
             WHERE iga.group_id = %s
             ORDER BY wi.user_id, wi.rank DESC, wi.created_at DESC
         """
-        results = execute_query(query, (group_id, group_id))
+        results = execute_query(query, (group_id,))
         return [WishlistItemEntity(**row) for row in results]
