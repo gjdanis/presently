@@ -34,3 +34,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# override parent gitignore (Python venv lib/) to track frontend lib/
+!lib/
