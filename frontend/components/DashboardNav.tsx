@@ -4,14 +4,17 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ThemeToggle } from './ThemeToggle'
 import { HelpDialog } from './HelpDialog'
+import { EditProfileModal } from './EditProfileModal'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/AuthContext'
 
 export function DashboardNav({ userName }: { userName: string }) {
   const pathname = usePathname()
-  const { signOut } = useAuth()
+  const { signOut, profile } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [showEditProfile, setShowEditProfile] = useState(false)
+  const [currentName, setCurrentName] = useState(userName)
 
   const handleSignOut = () => {
     signOut()
@@ -40,7 +43,13 @@ export function DashboardNav({ userName }: { userName: string }) {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-4">
-            <span className="text-muted-foreground">Hello, {userName}</span>
+            <button
+              onClick={() => setShowEditProfile(true)}
+              className="text-muted-foreground hover:text-foreground hover:underline"
+              title="Edit profile"
+            >
+              Hello, {currentName}
+            </button>
             <button
               onClick={() => setShowHelp(true)}
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -108,9 +117,12 @@ export function DashboardNav({ userName }: { userName: string }) {
               >
                 Wishlist
               </Link>
-              <div className="px-4 py-2 text-muted-foreground border-t border-border mt-2 pt-2">
-                Hello, {userName}
-              </div>
+              <button
+                onClick={() => { setMenuOpen(false); setShowEditProfile(true); }}
+                className="text-left px-4 py-2 text-muted-foreground hover:text-foreground rounded-lg border-t border-border mt-2"
+              >
+                Hello, {currentName}
+              </button>
               <button
                 onClick={() => { setMenuOpen(false); handleSignOut(); }}
                 className="text-left px-4 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg"
@@ -123,6 +135,13 @@ export function DashboardNav({ userName }: { userName: string }) {
       </div>
 
       <HelpDialog isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <EditProfileModal
+        isOpen={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        currentName={currentName}
+        currentEmail={profile?.email || ''}
+        onUpdate={(newName) => setCurrentName(newName)}
+      />
     </nav>
   )
 }

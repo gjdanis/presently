@@ -156,21 +156,31 @@ format:
 # ============================================================================
 
 frontend:
+	@$(eval ENV_ARG := $(filter-out frontend,$(MAKECMDGOALS)))
+	@$(eval ENV_NAME := $(if $(ENV_ARG),$(if $(filter dev,$(ENV_ARG)),development,$(if $(filter prod,$(ENV_ARG)),production,$(ENV_ARG))),local))
+	@$(eval ENV_FILE := .env.$(ENV_NAME))
 	@echo "🚀 Starting frontend development server..."
 	@if [ ! -d "$(FRONTEND_DIR)/node_modules" ]; then \
 		echo "❌ Frontend dependencies not installed. Run 'make install' first"; \
 		exit 1; \
 	fi
-	@if [ ! -f ".env.local" ]; then \
-		echo "❌ .env.local not found"; \
-		echo "   Copy .env.local.example to .env.local and configure"; \
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "❌ $(ENV_FILE) not found"; \
+		echo "   Copy .env.local.example to $(ENV_FILE) and configure"; \
 		exit 1; \
 	fi
 	@echo ""
 	@echo "Frontend will be available at: http://localhost:3000"
-	@echo "Loading environment from .env.local"
+	@echo "Loading environment from $(ENV_FILE)"
 	@echo ""
-	@cd $(FRONTEND_DIR) && set -a && . ../.env.local && set +a && npm run dev
+	@cd $(FRONTEND_DIR) && set -a && . ../$(ENV_FILE) && set +a && npm run dev
+
+# Allow passing environment names as targets
+dev prod local development production:
+	@:
+
+%:
+	@:
 
 backend:
 	@echo "🚀 Starting backend development server..."
