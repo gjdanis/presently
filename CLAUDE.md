@@ -51,7 +51,8 @@ Users:
 - Only one purchase per item per group
 
 ### Invitations
-- Invitations are email-based with expiring tokens
+- Invitations use shareable links with multi-use tokens
+- Optional: max uses limit, expiration time
 - Users may accept invites before or after registering
 - Accepting an invite auto-adds the user to the group
 
@@ -67,6 +68,7 @@ Main tables:
 - `item_group_assignments`
 - `purchases`
 - `group_invitations`
+- `invitation_acceptances` (tracks multi-use invite usage)
 
 Postgres is the source of truth.  
 No soft deletes unless explicitly requested.
@@ -85,11 +87,11 @@ No soft deletes unless explicitly requested.
 
 ## Lambda Structure
 
-- One handler file per domain:
-  - `groups.py`
-  - `wishlist.py`
-  - `purchases.py`
-  - `invitations.py`
+- FastAPI app with Mangum adapter for Lambda
+- Organized by layer:
+  - `routers/` - API endpoints (groups.py, wishlist.py, etc.)
+  - `services/` - Business logic
+  - `repositories/` - Data access
 - Shared utilities:
   - Auth (JWT verification)
   - DB access

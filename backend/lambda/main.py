@@ -53,6 +53,14 @@ async def root():
     }
 
 
+@app.get("/version", tags=["Health"])
+async def version():
+    """Returns the deployed git commit SHA."""
+    return {
+        "commit": os.getenv("GIT_COMMIT", "unknown"),
+    }
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Health check endpoint."""

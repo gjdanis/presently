@@ -8,7 +8,7 @@ A multi-group wishlist application for families and friends to share gift ideas 
 - 👥 Organize multiple groups (family, friends, coworkers)
 - 🔒 Privacy-first: item owners can't see who purchased their items
 - 🎯 Drag-and-drop prioritization for wishlist items
-- 📧 Email-based group invitations
+- 🔗 Shareable group invitation links
 - 📱 Responsive design for mobile and desktop
 - 💰 AWS Free Tier optimized (~$1-2/month)
 
@@ -22,7 +22,7 @@ A multi-group wishlist application for families and friends to share gift ideas 
 - **Storage**: AWS S3 + CloudFront CDN
 - **IaC**: CloudFormation + AWS SAM
 
-### Frontend (Coming Soon)
+### Frontend
 - **Framework**: Next.js 14 (React)
 - **Hosting**: Vercel
 - **Styling**: Tailwind CSS
@@ -77,7 +77,7 @@ make deploy ENV=prod
 make db-migrate
 ```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+See [backend/README.md](backend/README.md) for detailed deployment instructions.
 
 ## Project Structure
 
@@ -89,22 +89,23 @@ presently/
 │   │   │   ├── auth.py      # Cognito JWT verification
 │   │   │   ├── db.py        # Database connections
 │   │   │   ├── models.py    # Pydantic models
-│   │   │   ├── responses.py # HTTP helpers
-│   │   │   └── validators.py# Request validation
-│   │   └── handlers/        # API endpoints
-│   │       ├── profile.py   # User profiles
-│   │       ├── groups.py    # Group management
-│   │       ├── wishlist.py  # Wishlist CRUD
-│   │       ├── purchases.py # Purchase tracking
-│   │       ├── invitations.py# Group invites
-│   │       └── photos.py    # Photo uploads
+│   │   │   └── responses.py # HTTP helpers
+│   │   ├── routers/         # API endpoints (FastAPI)
+│   │   │   ├── profile.py   # User profiles
+│   │   │   ├── groups.py    # Group management
+│   │   │   ├── wishlist.py  # Wishlist CRUD
+│   │   │   ├── purchases.py # Purchase tracking
+│   │   │   ├── invitations.py# Group invites
+│   │   │   └── photos.py    # Photo uploads
+│   │   ├── services/        # Business logic
+│   │   └── repositories/    # Data access
 │   ├── migrations/          # Database schema
 │   ├── tests/               # Unit tests
 │   └── venv/               # Virtual environment (created by make)
 ├── infrastructure/
 │   ├── cloudformation/      # Infrastructure as Code
 │   └── scripts/             # Deployment scripts
-└── frontend/               # Coming soon
+└── frontend/               # Next.js app
 
 ```
 
@@ -347,6 +348,6 @@ MIT
 
 ## Support
 
-- Documentation: See [DEPLOYMENT.md](DEPLOYMENT.md) and [backend/README.md](backend/README.md)
+- Documentation: See [backend/README.md](backend/README.md)
 - Issues: Open a GitHub issue
 - Questions: Check CloudWatch logs and CloudFormation events

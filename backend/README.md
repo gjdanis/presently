@@ -5,7 +5,7 @@ Python-based AWS Lambda backend for the Presently wishlist application.
 ## Architecture
 
 - **Language**: Python 3.11
-- **Framework**: AWS Lambda + API Gateway
+- **Framework**: FastAPI + AWS Lambda (via Mangum)
 - **Database**: Neon Postgres (serverless)
 - **Auth**: AWS Cognito
 - **Storage**: AWS S3 + CloudFront CDN
@@ -20,15 +20,17 @@ backend/
 │   │   ├── auth.py          # Cognito JWT verification
 │   │   ├── db.py            # Database connections
 │   │   ├── models.py        # Pydantic models
-│   │   ├── responses.py     # HTTP response helpers
-│   │   └── validators.py    # Request validation
-│   ├── handlers/            # Lambda function handlers
+│   │   └── responses.py     # HTTP response helpers
+│   ├── routers/             # API endpoints (FastAPI routers)
 │   │   ├── profile.py       # Profile management
 │   │   ├── groups.py        # Group CRUD
 │   │   ├── wishlist.py      # Wishlist CRUD
 │   │   ├── purchases.py     # Purchase tracking
 │   │   ├── invitations.py   # Group invitations
 │   │   └── photos.py        # Photo uploads
+│   ├── services/            # Business logic layer
+│   ├── repositories/        # Data access layer
+│   ├── main.py              # FastAPI app entry point
 │   └── template.yaml        # SAM template
 ├── migrations/
 │   └── schema.sql           # Database schema

@@ -21,6 +21,11 @@ Parameters:
     Description: Frontend URL for invitation links
     Default: "https://presently-nu.vercel.app"
 
+  GitCommit:
+    Type: String
+    Description: Git commit SHA for the deployed version
+    Default: "unknown"
+
   LambdaCodeUri:
     Type: String
     Description: Path to Lambda code directory
@@ -255,6 +260,7 @@ Resources:
           COGNITO_CLIENT_ID: !Ref UserPoolClient
           ENVIRONMENT: !Ref Environment
           FRONTEND_URL: !Ref FrontendURL
+          GIT_COMMIT: !Ref GitCommit
       Events:
         # Catch-all proxy route for FastAPI (handles all paths including /)
         ProxyApi:
