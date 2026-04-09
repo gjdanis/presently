@@ -16,12 +16,6 @@ def pre_signup_handler(event, context):
     We can use it for custom validation or auto-confirmation.
     """
     logger.info(f"Pre-signup trigger invoked for user: {event['userName']}")
-
-    # Auto-confirm the user (skip email verification for dev/testing)
-    # In production, you might want to remove this or add custom validation
-    event['response']['autoConfirmUser'] = True
-    event['response']['autoVerifyEmail'] = True
-
     return event
 
 

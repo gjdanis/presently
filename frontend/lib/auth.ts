@@ -275,6 +275,36 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
+ * Initiate forgot password flow — sends a reset code to the user's email
+ */
+export function forgotPassword(email: string): Promise<void> {
+  if (isLocalDev) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const cognitoUser = new CognitoUser({ Username: email, Pool: getUserPool() });
+    cognitoUser.forgotPassword({
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(err),
+    });
+  });
+}
+
+/**
+ * Complete forgot password flow — applies new password using the emailed reset code
+ */
+export function confirmForgotPassword(email: string, code: string, newPassword: string): Promise<void> {
+  if (isLocalDev) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const cognitoUser = new CognitoUser({ Username: email, Pool: getUserPool() });
+    cognitoUser.confirmPassword(code, newPassword, {
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(err),
+    });
+  });
+}
+
+/**
  * Change the current user's password
  */
 export function changePassword(oldPassword: string, newPassword: string): Promise<string> {
