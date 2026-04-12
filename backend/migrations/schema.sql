@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
     price NUMERIC(10,2),
     photo_url TEXT,  -- S3 URL
     rank INTEGER NOT NULL DEFAULT 0,  -- For drag-and-drop ordering
+    received_at TIMESTAMPTZ,  -- Set when owner marks item as received; NULL = active
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

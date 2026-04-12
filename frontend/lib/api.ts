@@ -210,6 +210,11 @@ class ApiClient {
     });
   }
 
+  async markReceived(itemId: string): Promise<WishlistItem> {
+    const response = await this.client.patch<WishlistItem>(`/wishlist/${itemId}/received`);
+    return response.data;
+  }
+
   // Convenience aliases
   createItem = this.createWishlistItem;
   updateItem = this.updateWishlistItem;

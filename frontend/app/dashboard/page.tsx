@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [selectedItem, setSelectedItem] = useState<WishlistItem | null>(null)
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
   const [showHelp, setShowHelp] = useState(false)
+  const [undoItem, setUndoItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -41,6 +42,30 @@ export default function DashboardPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated])
+
+  async function handleMarkReceived(item: WishlistItem) {
+    setWishlistItems((prev) => prev.filter((i) => i.id !== item.id))
+    setUndoItem(item)
+    try {
+      await api.markReceived(item.id)
+    } catch (error) {
+      setWishlistItems((prev) => [...prev, item].sort((a, b) => a.rank - b.rank))
+      setUndoItem(null)
+      if (process.env.NODE_ENV === 'development') console.error('Error marking item received:', error)
+    }
+  }
+
+  async function handleUndo() {
+    if (!undoItem) return
+    const item = undoItem
+    setUndoItem(null)
+    try {
+      await api.markReceived(item.id)
+      setWishlistItems((prev) => [...prev, item].sort((a, b) => a.rank - b.rank))
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') console.error('Error undoing received:', error)
+    }
+  }
 
   async function loadDashboardData() {
     try {
@@ -160,6 +185,19 @@ export default function DashboardPage() {
           {/* Wishlist Items */}
           <div>
             <h2 className="text-2xl font-bold mb-4">Wishlist</h2>
+            {undoItem && (
+              <div className="flex items-center justify-between mb-4 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm">
+                <div className="flex items-center gap-3">
+                  <span>"{undoItem.name}" marked as received</span>
+                  <button onClick={handleUndo} className="font-medium underline hover:opacity-80">
+                    Undo
+                  </button>
+                </div>
+                <button onClick={() => setUndoItem(null)} className="hover:opacity-60 ml-4" aria-label="Dismiss">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            )}
 
             {loadingData ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -193,6 +231,7 @@ export default function DashboardPage() {
                     item={item}
                     onPhotoClick={() => setSelectedItem(item)}
                     onEditClick={() => setEditingItem(item)}
+                    onMarkReceived={() => handleMarkReceived(item)}
                     editMode={true}
                   />
                 ))}

@@ -67,6 +67,7 @@ class WishlistItemEntity(BaseModel):
     price: float | None
     photo_url: str | None
     rank: int
+    received_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     owner_name: str
@@ -206,14 +207,14 @@ class GroupsRepository:
         """
         query = """
             SELECT wi.id, wi.user_id, wi.name, wi.description, wi.url,
-                   wi.price, wi.photo_url, wi.rank, wi.created_at, wi.updated_at,
+                   wi.price, wi.photo_url, wi.rank, wi.received_at, wi.created_at, wi.updated_at,
                    p.name as owner_name, p.email as owner_email,
                    pur.purchased_by, pur.purchased_at
             FROM wishlist_items wi
             JOIN item_group_assignments iga ON wi.id = iga.item_id
             JOIN profiles p ON wi.user_id = p.id
             LEFT JOIN purchases pur ON wi.id = pur.item_id
-            WHERE iga.group_id = %s
+            WHERE iga.group_id = %s AND wi.received_at IS NULL
             ORDER BY wi.user_id, wi.rank DESC, wi.created_at DESC
         """
         results = execute_query(query, (group_id,))

@@ -66,6 +66,7 @@ export interface WishlistItem {
   groups: GroupInfo[];
   created_at: string;
   updated_at: string;
+  received_at?: string;      // Set by owner when item has been received
   is_purchased?: boolean;  // Hidden if viewing own items
   purchased_by?: string;    // Hidden if viewing own items
 }

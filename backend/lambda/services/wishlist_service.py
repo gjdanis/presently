@@ -47,6 +47,7 @@ class WishlistService:
                     price=item.price,
                     photo_url=photo_url,
                     rank=item.rank,
+                    received_at=item.received_at,
                     created_at=item.created_at,
                     updated_at=item.updated_at,
                     groups=[GroupInfo(id=g.id, name=g.name) for g in groups],
@@ -216,6 +217,34 @@ class WishlistService:
 
             # Update rank
             self.wishlist_repo.update_item_rank(str(item_id), rank)
+
+    def mark_item_received(self, user_id: str, item_id: str) -> WishlistItemResponse:
+        """Toggle the received state of an item (owner only)."""
+        item = self.wishlist_repo.get_item_by_id(item_id)
+        if not item or str(item.user_id) != user_id:
+            raise ForbiddenError("You can only mark your own wishlist items as received")
+
+        updated_item = self.wishlist_repo.toggle_item_received(item_id)
+        if not updated_item:
+            raise NotFoundError("Wishlist item not found")
+
+        groups = self.wishlist_repo.get_item_groups(item_id)
+        photo_url = s3_uri_to_presigned_url(updated_item.photo_url) if updated_item.photo_url else None
+
+        return WishlistItemResponse(
+            id=updated_item.id,
+            user_id=updated_item.user_id,
+            name=updated_item.name,
+            description=updated_item.description,
+            url=updated_item.url,
+            price=updated_item.price,
+            photo_url=photo_url,
+            rank=updated_item.rank,
+            received_at=updated_item.received_at,
+            created_at=updated_item.created_at,
+            updated_at=updated_item.updated_at,
+            groups=[GroupInfo(id=g.id, name=g.name) for g in groups],
+        )
 
     def delete_wishlist_item(self, user_id: str, item_id: str) -> None:
         """Delete a wishlist item (owner only)."""

@@ -25,6 +25,7 @@ class WishlistItemEntity(BaseModel):
     price: float | None
     photo_url: str | None
     rank: int
+    received_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -46,12 +47,12 @@ class WishlistRepository:
     """Repository for wishlist items data access."""
 
     def get_user_wishlist_items(self, user_id: str) -> list[WishlistItemEntity]:
-        """Get all wishlist items for a user."""
+        """Get active (not received) wishlist items for a user."""
         query = """
             SELECT wi.id, wi.user_id, wi.name, wi.description, wi.url,
-                   wi.price, wi.photo_url, wi.rank, wi.created_at, wi.updated_at
+                   wi.price, wi.photo_url, wi.rank, wi.received_at, wi.created_at, wi.updated_at
             FROM wishlist_items wi
-            WHERE wi.user_id = %s
+            WHERE wi.user_id = %s AND wi.received_at IS NULL
             ORDER BY wi.rank ASC, wi.created_at DESC
         """
         results = execute_query(query, (user_id,))
@@ -61,9 +62,21 @@ class WishlistRepository:
         """Get wishlist item by ID."""
         query = """
             SELECT wi.id, wi.user_id, wi.name, wi.description, wi.url,
-                   wi.price, wi.photo_url, wi.rank, wi.created_at, wi.updated_at
+                   wi.price, wi.photo_url, wi.rank, wi.received_at, wi.created_at, wi.updated_at
             FROM wishlist_items wi
             WHERE wi.id = %s
+        """
+        result = execute_query(query, (item_id,), fetch_one=True)
+        return WishlistItemEntity(**result) if result else None
+
+    def toggle_item_received(self, item_id: str) -> WishlistItemEntity | None:
+        """Toggle the received state of an item. Sets received_at if null, clears it if set."""
+        query = """
+            UPDATE wishlist_items
+            SET received_at = CASE WHEN received_at IS NULL THEN NOW() ELSE NULL END
+            WHERE id = %s
+            RETURNING id, user_id, name, description, url, price, photo_url, rank,
+                      received_at, created_at, updated_at
         """
         result = execute_query(query, (item_id,), fetch_one=True)
         return WishlistItemEntity(**result) if result else None
@@ -82,7 +95,8 @@ class WishlistRepository:
         query = """
             INSERT INTO wishlist_items (user_id, name, description, url, price, photo_url, rank)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, user_id, name, description, url, price, photo_url, rank, created_at, updated_at
+            RETURNING id, user_id, name, description, url, price, photo_url, rank,
+                      received_at, created_at, updated_at
         """
         result = execute_insert(query, (user_id, name, description, url, price, photo_url, rank))
         return WishlistItemEntity(**result) if result else None
@@ -129,7 +143,8 @@ class WishlistRepository:
             UPDATE wishlist_items
             SET {', '.join(updates)}
             WHERE id = %s
-            RETURNING id, user_id, name, description, url, price, photo_url, rank, created_at, updated_at
+            RETURNING id, user_id, name, description, url, price, photo_url, rank,
+                      received_at, created_at, updated_at
         """
         result = execute_query(query, tuple(params), fetch_one=True)
         return WishlistItemEntity(**result) if result else None

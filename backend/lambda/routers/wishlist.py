@@ -124,6 +124,23 @@ async def update_wishlist_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
+@router.patch("/{item_id}/received", response_model=WishlistItemResponse)
+async def toggle_item_received(
+    item_id: UUID,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    service: WishlistService = Depends(get_wishlist_service),
+):
+    """Toggle received state on a wishlist item (owner only)."""
+    user_id = str(current_user.sub)
+
+    try:
+        return service.mark_item_received(user_id, str(item_id))
+    except ForbiddenError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_wishlist_item(
     item_id: UUID,

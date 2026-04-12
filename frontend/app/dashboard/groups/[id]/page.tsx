@@ -25,6 +25,7 @@ export default function GroupDetailPage() {
   const [hidePurchased, setHidePurchased] = useState(false)
   const [selectedItem, setSelectedItem] = useState<WishlistItem | null>(null)
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
+  const [undoItem, setUndoItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -38,6 +39,61 @@ export default function GroupDetailPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, groupId])
+
+  async function handleMarkReceived(item: any) {
+    // Optimistically remove from group wishlist view
+    setGroupData((prevData) => {
+      if (!prevData) return prevData
+      return {
+        ...prevData,
+        wishlists: prevData.wishlists.map((wishlist) => ({
+          ...wishlist,
+          items: wishlist.items.filter((i: any) => i.id !== item.id),
+        })),
+      }
+    })
+    setUndoItem(item)
+    try {
+      await api.markReceived(item.id)
+    } catch (error) {
+      // Revert on failure
+      setGroupData((prevData) => {
+        if (!prevData) return prevData
+        return {
+          ...prevData,
+          wishlists: prevData.wishlists.map((wishlist) =>
+            wishlist.user_id === item.user_id
+              ? { ...wishlist, items: [...wishlist.items, item] }
+              : wishlist
+          ),
+        }
+      })
+      setUndoItem(null)
+      if (process.env.NODE_ENV === 'development') console.error('Error marking item received:', error)
+    }
+  }
+
+  async function handleUndo() {
+    if (!undoItem) return
+    const item = undoItem
+    setUndoItem(null)
+    try {
+      await api.markReceived(item.id)
+      setGroupData((prevData) => {
+        if (!prevData) return prevData
+        return {
+          ...prevData,
+          wishlists: prevData.wishlists.map((wishlist) =>
+            wishlist.user_id === item.user_id
+              ? { ...wishlist, items: [...wishlist.items, item] }
+              : wishlist
+          ),
+        }
+      })
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') console.error('Error undoing received:', error)
+    }
+  }
 
   const loadGroup = async () => {
     try {
@@ -198,6 +254,19 @@ export default function GroupDetailPage() {
           ) : (
             <div className="bg-card rounded-lg shadow border border-border">
               <div className="p-6">
+                {undoItem && (
+                  <div className="flex items-center justify-between mb-4 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm">
+                    <div className="flex items-center gap-3">
+                      <span>"{undoItem.name}" marked as received</span>
+                      <button onClick={handleUndo} className="font-medium underline hover:opacity-80">
+                        Undo
+                      </button>
+                    </div>
+                    <button onClick={() => setUndoItem(null)} className="hover:opacity-60 ml-4" aria-label="Dismiss">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                )}
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-foreground">
                     {selectedWishlist.user_name}'s Wishlist
@@ -261,6 +330,7 @@ export default function GroupDetailPage() {
                           item={item}
                           onPhotoClick={() => setSelectedItem(item)}
                           onEditClick={isOwnItem ? () => setEditingItem(item as WishlistItem) : undefined}
+                          onMarkReceived={isOwnItem ? () => handleMarkReceived(item) : undefined}
                           editMode={isOwnItem}
                           highlightPurchased={purchasedByMe}
                           actionButton={

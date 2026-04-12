@@ -294,3 +294,75 @@ def test_reorder_items(
     assert items[0].name == "Item 2"
     assert items[1].name == "Item 0"
     assert items[2].name == "Item 1"
+
+
+def test_mark_item_received(
+    clean_db: Any,
+    sample_profile: dict[str, Any],
+    sample_wishlist_item: dict[str, Any],
+    wishlist_service: WishlistService,
+):
+    """Test marking a wishlist item as received."""
+    result = wishlist_service.mark_item_received(
+        sample_profile["id"], sample_wishlist_item["id"]
+    )
+
+    assert result.id == UUID(sample_wishlist_item["id"])
+    assert result.received_at is not None
+
+
+def test_mark_item_received_toggle(
+    clean_db: Any,
+    sample_profile: dict[str, Any],
+    sample_wishlist_item: dict[str, Any],
+    wishlist_service: WishlistService,
+):
+    """Test that marking received a second time un-marks it."""
+    wishlist_service.mark_item_received(sample_profile["id"], sample_wishlist_item["id"])
+    result = wishlist_service.mark_item_received(sample_profile["id"], sample_wishlist_item["id"])
+
+    assert result.received_at is None
+
+
+def test_mark_item_received_not_owner(
+    clean_db: Any, sample_wishlist_item: dict[str, Any], wishlist_service: WishlistService
+):
+    """Test that a non-owner cannot mark an item as received."""
+    stranger_id = str(uuid4())
+
+    with pytest.raises(ForbiddenError, match="only mark your own"):
+        wishlist_service.mark_item_received(stranger_id, sample_wishlist_item["id"])
+
+
+def test_get_wishlist_excludes_received(
+    clean_db: Any,
+    sample_profile: dict[str, Any],
+    sample_group: dict[str, Any],
+    sample_wishlist_item: dict[str, Any],
+    wishlist_service: WishlistService,
+):
+    """Test that received items are excluded from the wishlist by default."""
+    # Create a second item
+    cursor = clean_db.cursor()
+    cursor.execute(
+        """
+        INSERT INTO wishlist_items (user_id, name, rank)
+        VALUES (%s, %s, %s) RETURNING id
+        """,
+        (sample_profile["id"], "Second Item", 1),
+    )
+    second_id = str(cursor.fetchone()[0])
+    cursor.execute(
+        "INSERT INTO item_group_assignments (item_id, group_id) VALUES (%s, %s)",
+        (second_id, sample_group["id"]),
+    )
+    clean_db.commit()
+    cursor.close()
+
+    # Mark the first item as received
+    wishlist_service.mark_item_received(sample_profile["id"], sample_wishlist_item["id"])
+
+    # Only the second item should appear
+    items = wishlist_service.get_user_wishlist(sample_profile["id"])
+    assert len(items) == 1
+    assert items[0].name == "Second Item"

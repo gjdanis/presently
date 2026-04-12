@@ -1,4 +1,4 @@
-.PHONY: help install test lint format frontend backend db-local-up db-local-down seed deploy-dev clean
+.PHONY: help install test lint format frontend backend db-local-up db-local-down seed local deploy-dev clean
 
 # Variables
 BACKEND_DIR := backend
@@ -176,7 +176,7 @@ frontend:
 	@cd $(FRONTEND_DIR) && set -a && . ../$(ENV_FILE) && set +a && npm run dev
 
 # Allow passing environment names as targets
-dev prod local development production:
+dev prod development production:
 	@:
 
 %:
@@ -238,9 +238,20 @@ seed:
 
 db-migrate:
 	@echo "🗃️  Running database migrations on local environment..."
-	@DATABASE_URL=postgresql://presently:presently_local@localhost:5433/presently_local \
-		psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
+	@psql "postgresql://presently:presently_local@localhost:5433/presently_local" \
+		-f $(BACKEND_DIR)/migrations/schema.sql
 	@echo "✅ Migrations complete!"
+
+local:
+	@echo "🚀 Starting local development environment..."
+	@$(MAKE) db-local-up
+	@echo "🗃️  Running migrations..."
+	@psql "postgresql://presently:presently_local@localhost:5433/presently_local" \
+		-f $(BACKEND_DIR)/migrations/schema.sql
+	@echo "🌱 Seeding database..."
+	@DATABASE_URL=postgresql://presently:presently_local@localhost:5433/presently_local \
+		$(PYTHON) $(BACKEND_DIR)/scripts/seed_local.py
+	@$(MAKE) backend
 
 db-migrate-dev:
 	@echo "🗃️  Running database migrations on dev environment..."
@@ -265,6 +276,19 @@ db-migrate-prod:
 	@export $$(cat .env.production | grep -v '^#' | grep -v '^$$' | xargs) && \
 		psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/schema.sql
 	@echo "✅ Migrations complete!"
+
+# Run a specific numbered migration (e.g. make db-run-migration FILE=003_wishlist_item_received.sql ENV=prod)
+db-run-migration:
+	@if [ -z "$(FILE)" ]; then echo "❌ Usage: make db-run-migration FILE=003_foo.sql ENV=dev|prod"; exit 1; fi
+	@RAW_ENV="$(or $(ENV),development)"; \
+	if [ "$$RAW_ENV" = "dev" ]; then ENV_FILE=".env.development"; \
+	elif [ "$$RAW_ENV" = "prod" ]; then ENV_FILE=".env.production"; \
+	else ENV_FILE=".env.$$RAW_ENV"; fi; \
+	if [ ! -f "$$ENV_FILE" ]; then echo "❌ $$ENV_FILE not found"; exit 1; fi; \
+	echo "🗃️  Running migration $(FILE) against $$ENV_FILE..."; \
+	export $$(cat $$ENV_FILE | grep -v '^#' | grep -v '^$$' | xargs) && \
+		psql "$$DATABASE_URL" -f $(BACKEND_DIR)/migrations/$(FILE)
+	@echo "✅ Migration complete!"
 
 # ============================================================================
 # Deployment

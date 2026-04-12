@@ -179,6 +179,7 @@ class WishlistItemResponse(WishlistItemBase):
     user_id: UUID
     rank: int
     groups: list[GroupInfo]
+    received_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     is_purchased: bool | None = None  # Only visible to non-owners
