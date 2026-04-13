@@ -324,6 +324,8 @@ deploy-dev:
 			NeonDatabaseURL="$$DATABASE_URL" \
 			FrontendURL="$$FRONTEND_URL" \
 			GitCommit="$$(git rev-parse HEAD)" \
+			GitHubToken="$${GITHUB_TOKEN:-}" \
+			GitHubRepo="$${GITHUB_REPO:-}" \
 		--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
 		--resolve-s3 \
 		--no-fail-on-empty-changeset && \
@@ -386,6 +388,8 @@ deploy-prod:
 			NeonDatabaseURL="$$DATABASE_URL" \
 			FrontendURL="$$FRONTEND_URL" \
 			GitCommit="$$(git rev-parse HEAD)" \
+			GitHubToken="$${GITHUB_TOKEN:-}" \
+			GitHubRepo="$${GITHUB_REPO:-}" \
 		--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
 		--resolve-s3 \
 		--no-fail-on-empty-changeset && \

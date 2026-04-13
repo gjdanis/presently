@@ -26,6 +26,17 @@ Parameters:
     Description: Git commit SHA for the deployed version
     Default: "unknown"
 
+  GitHubToken:
+    Type: String
+    Description: GitHub fine-grained PAT with issues:write permission
+    NoEcho: true
+    Default: ""
+
+  GitHubRepo:
+    Type: String
+    Description: GitHub repo slug (e.g. georgejdanis/presently)
+    Default: ""
+
   LambdaCodeUri:
     Type: String
     Description: Path to Lambda code directory
@@ -261,6 +272,8 @@ Resources:
           ENVIRONMENT: !Ref Environment
           FRONTEND_URL: !Ref FrontendURL
           GIT_COMMIT: !Ref GitCommit
+          GITHUB_TOKEN: !Ref GitHubToken
+          GITHUB_REPO: !Ref GitHubRepo
       Events:
         # Catch-all proxy route for FastAPI (handles all paths including /)
         ProxyApi:

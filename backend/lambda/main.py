@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from middleware import LoggingMiddleware
-from routers import groups, invitations, photos, profile, purchases, wishlist
+from routers import feedback, groups, invitations, photos, profile, purchases, wishlist
 
 # Create FastAPI app
 app = FastAPI(
@@ -35,6 +35,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
 app.include_router(profile.router, prefix="/profile", tags=["Profile"])
 app.include_router(groups.router, prefix="/groups", tags=["Groups"])
 app.include_router(wishlist.router, prefix="/wishlist", tags=["Wishlist"])

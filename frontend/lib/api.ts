@@ -215,6 +215,11 @@ class ApiClient {
     return response.data;
   }
 
+  async submitFeedback(title: string | undefined, body: string): Promise<{ issue_url: string }> {
+    const response = await this.client.post<{ issue_url: string }>('/feedback', { title, body });
+    return response.data;
+  }
+
   // Convenience aliases
   createItem = this.createWishlistItem;
   updateItem = this.updateWishlistItem;
